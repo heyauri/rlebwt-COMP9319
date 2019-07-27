@@ -9,18 +9,11 @@
 
 using namespace std;
 // the max size of buffers
-#define MAXSIZE 20480
+#define MAXSIZE 10240
 #define BITMAX MAXSIZE*8
 int i, j, k;
 
 
-void getBitArray(vector<bool> &arr, char *str) {
-	for (i = 0; i < strlen(str); i++) {
-		for (j = 7; j > -1; j--) {
-			arr.push_back(str[i] & (1 << j));
-		}
-	}
-}
 
 void printBitArray(vector<bool> &arr) {
 	for (i = 0; i < arr.size(); i++)//size()容器中实际数据个数
@@ -38,6 +31,44 @@ void writeBitToBitArray(vector<bool> &arr, int l){
 	while (l>0){
 		arr.push_back(false);
 		l--;
+	}
+}
+
+
+void getBitArray(vector<bool> &arr, char *str) {
+	for (i = 0; i < strlen(str); i++) {
+		for (j = 7; j > -1; j--) {
+			arr.push_back(str[i] & (1 << j));
+		}
+	}
+}
+
+void convertBitsToString(vector<bool> &arr,char (&str)[MAXSIZE]){
+	printBitArray(arr);
+	for ( i = 0; i < arr.size()/8; i++ ){
+		str[i]=0;
+		for(j=0;j<8;j++){
+			//cout<<(arr[8*i+j]<<(7-j))<<" ";
+			str[i] |= arr[8*i+j]<<(7-j);
+		}
+	}
+	cout<<endl;
+}
+
+void sortFS(char (&fs)[MAXSIZE]){
+	int fs_size=(int)strlen(fs);
+	int min;
+	char tmp;
+	for(i=0;i<fs_size;i++){
+		min=i;
+		for(j=i+1;j<fs_size;j++){
+			if(fs[j]<fs[min]){
+				min=j;
+			}
+		}
+		tmp=fs[i];
+		fs[i]=fs[min];
+		fs[min]=tmp;
 	}
 }
 
@@ -74,7 +105,7 @@ void sortFSAndBB(char (&fs)[MAXSIZE],vector<bool> &bb){
 					bb[baseline+length_next]=true;
 					bb[baseline+length_prev]=false;
 				}
-
+				/*
 				for(int a=0;a<b_size;a++){
 					cout<<bb[a];
 					if((a+1)%8==0){
@@ -82,6 +113,7 @@ void sortFSAndBB(char (&fs)[MAXSIZE],vector<bool> &bb){
 					}
 				}
 				//cout<<endl;
+				 */
 
 				baseline+=length_next;
 
@@ -100,7 +132,7 @@ void generateBBFile(string &fileName) {
 	bbFN = fileName + ".bb";
 	sFN = fileName + ".s";
 	bFN = fileName + ".b";
-	FILE *sp, *bp;
+	FILE *sp, *bp,*bbp;
 	cout << bFN << endl;
 	sp = fopen(sFN.c_str(), "r");
 	bp = fopen(bFN.c_str(), "r");
@@ -109,6 +141,7 @@ void generateBBFile(string &fileName) {
 	}
 	char s_buffer[MAXSIZE];
 	char b_buffer[MAXSIZE];
+	char bb_str[MAXSIZE];
 	char fs[MAXSIZE];
 	vector<bool> b_arr,bb_arr;
 	int flag=0;
@@ -119,19 +152,22 @@ void generateBBFile(string &fileName) {
 		if (!feof(bp)) {
 			fgets(b_buffer, MAXSIZE, bp);
 			getBitArray(b_arr, b_buffer);
-			printBitArray(b_arr);
+			//printBitArray(b_arr);
 
 			while (!flag){
 				strcpy(fs,s_buffer);
-				cout<<fs<<endl;
+				//cout<<fs<<endl;
 				bb_arr.assign(b_arr.begin(),b_arr.end());
 				sortFSAndBB(fs,bb_arr);
-				cout<<fs<<endl;
-				cout<<bb_arr.size()<<endl;
-				printBitArray(bb_arr);
+				//cout<<fs<<endl;
+				//cout<<bb_arr.size()<<endl;
+				//printBitArray(bb_arr);
 				break;
-
 			}
+
+			convertBitsToString(bb_arr,bb_str);
+			bbp=fopen(bbFN.c_str(),"w");
+			fwrite(bb_str,strlen(bb_str),1,bbp);
 		}
 
 
