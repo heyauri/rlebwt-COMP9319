@@ -2,4 +2,4 @@
 
 make -B
 
-./rlebwt -m ./files/simple1 ./index ana
+./rlebwt -m ./test/shopping ./index ana

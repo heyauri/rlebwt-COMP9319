@@ -31,4 +31,5 @@ index
 test
 CMakeLists.txt
 rlebwt
+rlfm.cpp
 
