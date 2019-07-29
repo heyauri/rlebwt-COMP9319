@@ -8,8 +8,10 @@
 using namespace std;
 
 
-#define MAXSIZE 10240
+#define MAXSIZE 20480
 #define BITMAX MAXSIZE*8
+
+#define SECTIONSIZE 2048
 
 void printBitArray(std::vector<bool> &arr);
 void writeBitToBitArray(vector<bool> &arr, int l);

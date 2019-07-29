@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <vector>
 #include <map>
+#include <bitset>
 #include "sys/types.h"
 #include "sys/stat.h"
 
@@ -11,8 +12,6 @@
 
 using namespace std;
 // the max size of buffers
-#define MAXSIZE 10240
-#define BITMAX MAXSIZE*8
 int i, j, k;
 
 
@@ -21,110 +20,36 @@ char s_buffer[MAXSIZE];
 char b_buffer[MAXSIZE];
 char bb_buffer[MAXSIZE];
 char fs[MAXSIZE];
-vector<bool> b_arr, bb_arr;
-vector<unsigned int> select_b,select_bb;
-map<char,unsigned int> cs_table,lens_table;
-map<unsigned int,unsigned int> rank_b,rank_bb;
+
+//for s
+unsigned int cs_table[256],lens_table[256];
+vector<unsigned int> rank_s;
+int s_section_count=0;
+
+//for b
+vector<unsigned int> rank_b,select_b;
+int rank_b_section_count=0,select_b_section_count=0;
+int suffix_b1_start=0;
+
 FILE *sp, *bp, *bbp;
 int flag = 0, count_of_char = 0, last = 0;
 int baseline = 0, length_prev = 0, length_next = 0, status = 0;
 int fst,lst;
+unsigned int count_of_s=0;
 
-
-
-void getBitArray(vector<bool> &arr, char *str, int &count, int &last) {
-	for (i = 0; i < strlen(str); i++) {
-		for (j = 7; j > -1; j--) {
-			arr.push_back(str[i] & (1 << j));
-			if (str[i] & (1 << j)) {
-				count++;
-				last = 8 * i + (7 - j);
-			}
-		}
+void init(){
+	for(i=0;i<256;i++){
+		cs_table[i]=0;
+		lens_table[i]=0;
+		rank_s.push_back(0);
 	}
+	rank_b.push_back(0);
+	select_b.push_back(0);
 }
 
-void convertBitsToString(vector<bool> &arr, char (&str)[MAXSIZE]) {
-	//printBitArray(arr);
-	for (i = 0; i < arr.size() / 8; i++) {
-		str[i] = 0;
-		for (j = 0; j < 8; j++) {
-			//cout<<(arr[8*i+j]<<(7-j))<<" ";
-			str[i] |= arr[8 * i + j] << (7 - j);
-		}
-	}
-	//cout<<endl;
-}
-
-void sortFS(char (&fs)[MAXSIZE]) {
-	int fs_size = (int) strlen(fs);
-	int min;
-	char tmp;
-	for (i = 0; i < fs_size; i++) {
-		min = i;
-		for (j = i + 1; j < fs_size; j++) {
-			if (fs[j] < fs[min]) {
-				min = j;
-			}
-		}
-		tmp = fs[i];
-		fs[i] = fs[min];
-		fs[min] = tmp;
-	}
-}
-
-void sortFSAndBB(char (&fs)[MAXSIZE], vector<bool> &bb) {
-	int fs_size = (int) strlen(fs);
-	int b_size = (int) bb.size();
-	char tmp;
-	baseline = 0, length_prev = 0, length_next = 0, status = 0;
-	for (i = 0; i < fs_size - 1; i++) {
-		baseline = 0;
-		for (j = 0; j < fs_size - 1 - i; j++) {
-			length_next = 0;
-			length_prev = 0;
-			for (k = baseline; k < b_size; k++) {
-				if (bb[k]) {
-					status++;
-				}
-				if (status == 1) {
-					length_prev++;
-				} else if (status == 2) {
-					length_next++;
-				} else if (status == 3) {
-					break;
-				}
-			}
-			status = 0;
-			if (fs[j] > fs[j + 1]) {
-				//cout<<baseline<<endl;
-				//cout<<fs[j]<<length_prev<<","<<fs[j+1]<<length_next<<endl;
-				tmp = fs[j + 1];
-				fs[j + 1] = fs[j];
-				fs[j] = tmp;
-				if (length_next != length_prev) {
-					bb[baseline + length_next] = true;
-					bb[baseline + length_prev] = false;
-				}
-				/*
-				for(int a=0;a<b_size;a++){
-					cout<<bb[a];
-					if((a+1)%8==0){
-						cout<<" ";
-					}
-				}
-				//cout<<endl;
-				 */
-
-				baseline += length_next;
-
-			} else {
-				baseline += length_prev;
-			};
-
-			//cout<<baseline<<endl;
-		}
-		//printBitArray(bb);
+void newSectionOfRankS(){
+	for(i=0;i<256;i++){
+		rank_s.push_back(0);
 	}
 }
 
@@ -142,71 +67,45 @@ void readSB(string &fileName) {
 	if (!sp || !bp) {
 		cout << fileName + ".s/.b not exists!" << endl;
 	}
-	while (!feof(sp) || !feof(bp)) {
-		if (!feof(sp)) {
-			fgets(s_buffer, MAXSIZE, sp);
-		}
-		if (!feof(bp)) {
-			count_of_char = 0;
-			fgets(b_buffer, MAXSIZE, bp);
-			getBitArray(b_arr, b_buffer, count_of_char, last);
-			while (!flag) {
-				strcpy(fs, s_buffer);
-				if (!bbp_exist) {
-					bb_arr.assign(b_arr.begin(), b_arr.end());
-					sortFSAndBB(fs, bb_arr);
-					convertBitsToString(bb_arr, bb_buffer);
-					printBitArray(bb_arr);
-					if (!(bbp = fopen(bbFN.c_str(), "r"))) {
-						fclose(bbp);
-						bbp = fopen(bbFN.c_str(), "w");
-						fwrite(bb_buffer, strlen(bb_buffer), 1, bbp);
-					} else {
-						bbp = fopen(bbFN.c_str(), "w");
-						fwrite(bb_buffer, strlen(bb_buffer), 1, bbp);
-					}
-				} else {
-					fgets(bb_buffer, MAXSIZE, bbp);
-					getBitArray(bb_arr, bb_buffer, count_of_char, last);
-					sortFS(fs);
-					printBitArray(bb_arr);
+	//c_table rank_s
+	while (!feof(sp)) {
+		fgets(s_buffer,MAXSIZE,sp);
+		for(i=0;i<strlen(s_buffer);i++){
+			lens_table[(int)s_buffer[i]]++;
+			if((i+1)%SECTIONSIZE==0){
+				for(j=0;j<256;j++){
+					rank_s.push_back(lens_table[j]);
 				}
-				break;
+				s_section_count++;
+			}
+		}
+		count_of_s+=strlen(s_buffer);
+	}
+	//rank_b select_b
+	while(!feof(bp)){
+		fgets(b_buffer,MAXSIZE,bp);
+		bitset<BITMAX> b_arr(b_buffer);
+		//b_count : how many 1 in b
+		unsigned int b_count=rank_b[s_section_count];
+		for(i=0;i<b_arr.size();i++){
+			if(b_arr[i]){
+				b_count++;
+				if(b_count%SECTIONSIZE==0 && b_count>0){
+					select_b.push_back((unsigned int)select_b_section_count*SECTIONSIZE+i%SECTIONSIZE);
+				}
+				if(b_count+1==count_of_s){
+					suffix_b1_start=rank_b_section_count*SECTIONSIZE+i%SECTIONSIZE;
+				}
+			}
+			if((i+1)%SECTIONSIZE==0){
+				rank_b.push_back(b_count);
+				rank_b_section_count++;
 			}
 		}
 	}
+
 }
 
-void generateIndex(){
-	//get cs_table
-	char prev_char;
-	baseline=-1;
-	cout<<fs<<endl;
-	unsigned int count_b=0,count_bb=0;
-	for(i=0;i<strlen(fs);i++){
-		while(true){
-			baseline++;
-			if(b_arr[baseline]){
-				count_b++;
-				select_b.push_back((unsigned int)baseline);
-				rank_b[baseline]=count_b;
-			}
-			if(bb_arr[baseline]){
-				count_bb++;
-				select_bb.push_back((unsigned int)baseline);
-				rank_bb[baseline]=count_bb;
-				break;
-			}
-		}
-		if(prev_char!=fs[i]){
-			cs_table[fs[i]]=baseline;
-			if(prev_char){
-				lens_table[prev_char]=baseline-cs_table[prev_char];
-			}
-			prev_char=fs[i];
-		}
-	}
-}
 
 void searchForTimes(string target){
 
@@ -221,10 +120,10 @@ int main(int argc, char *argv[]) {
 	std::string fileName = argv[2];
 	std::string mode = argv[1];
 	std::string target = argv[4];
+	init();
 	readSB(fileName);
 
 	//after read , Assume that all S B and BB is good.
-	generateIndex();
 	if(mode=="-m"){
 		searchForTimes(target);
 	}

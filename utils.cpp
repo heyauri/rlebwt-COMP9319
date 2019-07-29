@@ -7,7 +7,6 @@
 
 #include "utils.h"
 int q,w,e;
-map<unsigned int,unsigned int>::iterator iter;
 
 using namespace std;
 
@@ -33,10 +32,5 @@ void writeBitToBitArray(vector<bool> &arr, int l) {
 void printSelectBitArray(vector<bool> &select_b){
 	for(q=0;q<select_b.size();q++){
 		cout<<q+1<<","<<select_b[q]<<endl;
-	}
-}
-void printRankBMap(map<unsigned int,unsigned int> &rank_b){
-	for(iter = rank_b.begin(); iter != rank_b.end(); iter++) {
-		cout << iter->first+1 << " : " << iter->second << endl;
 	}
 }
