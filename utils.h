@@ -8,7 +8,7 @@
 using namespace std;
 
 
-#define MAXSIZE 20480
+#define MAXSIZE 8
 #define BITMAX MAXSIZE*8
 
 #define SECTIONSIZE 2048
