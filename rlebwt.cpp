@@ -7,6 +7,7 @@
 #include "sys/types.h"
 #include "sys/stat.h"
 
+#include "utils.h"
 
 using namespace std;
 // the max size of buffers
@@ -22,31 +23,14 @@ char bb_buffer[MAXSIZE];
 char fs[MAXSIZE];
 vector<bool> b_arr, bb_arr;
 vector<unsigned int> select_b,select_bb;
-map<char,unsigned int> cs_table;
+map<char,unsigned int> cs_table,lens_table;
 map<unsigned int,unsigned int> rank_b,rank_bb;
 FILE *sp, *bp, *bbp;
 int flag = 0, count_of_char = 0, last = 0;
 int baseline = 0, length_prev = 0, length_next = 0, status = 0;
+int fst,lst;
 
 
-void printBitArray(vector<bool> &arr) {
-	for (i = 0; i < arr.size(); i++)//size()容器中实际数据个数
-	{
-		cout << arr[i];
-		if ((i + 1) % 8 == 0) {
-			cout << " ";
-		}
-	}
-	cout << endl;
-}
-
-void writeBitToBitArray(vector<bool> &arr, int l) {
-	arr.push_back(true);
-	while (l > 0) {
-		arr.push_back(false);
-		l--;
-	}
-}
 
 void getBitArray(vector<bool> &arr, char *str, int &count, int &last) {
 	for (i = 0; i < strlen(str); i++) {
@@ -205,31 +189,23 @@ void generateIndex(){
 			if(b_arr[baseline]){
 				count_b++;
 				select_b.push_back((unsigned int)baseline);
-				rank_b[baseline+1]=count_b;
+				rank_b[baseline]=count_b;
 			}
 			if(bb_arr[baseline]){
 				count_bb++;
 				select_bb.push_back((unsigned int)baseline);
-				rank_bb[baseline+1]=count_bb;
+				rank_bb[baseline]=count_bb;
 				break;
 			}
 		}
 		if(prev_char!=fs[i]){
 			cs_table[fs[i]]=baseline;
+			if(prev_char){
+				lens_table[prev_char]=baseline-cs_table[prev_char];
+			}
 			prev_char=fs[i];
 		}
 	}
-
-	for(i=0;i<select_bb.size();i++){
-		cout<<i<<","<<select_b[i]<<endl;
-	}
-
-
-	map<unsigned int,unsigned int>::iterator iter;
-	for(iter = rank_bb.begin(); iter != rank_bb.end(); iter++) {
-		cout << iter->first << " : " << iter->second << endl;
-	}
-
 }
 
 void searchForTimes(string target){
