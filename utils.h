@@ -7,11 +7,13 @@
 
 using namespace std;
 
+//MAXSIZE should larger than SECTIONSIZE
 
-#define MAXSIZE 8
+#define MAXSIZE 16
 #define BITMAX MAXSIZE*8
+#define CHARSCALE 128
 
-#define SECTIONSIZE 2048
+#define SECTIONSIZE 8
 
 void printBitArray(std::vector<bool> &arr);
 void writeBitToBitArray(vector<bool> &arr, int l);
