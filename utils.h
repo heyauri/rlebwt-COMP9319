@@ -9,11 +9,11 @@ using namespace std;
 
 //MAXSIZE should larger than SECTIONSIZE
 
-#define MAXSIZE 16
+#define MAXSIZE 64
 #define BITMAX MAXSIZE*8
 #define CHARSCALE 128
 
-#define SECTIONSIZE 8
+#define SECTIONSIZE 16
 #define BIT_SECTION_SIZE_OF_CHAR (SECTIONSIZE/8)
 
 void printBitArray(std::vector<bool> &arr);

@@ -8,6 +8,6 @@ rm -f "$fn.bb"
 
 ./rlebwt -m $fn ./index ana
 
- xxd -b "$fn.b"
+# xxd -b "$fn.b"
 
- xxd -b "$fn.bb1"
+# xxd -b "$fn.bb1"

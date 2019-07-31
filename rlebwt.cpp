@@ -192,8 +192,8 @@ unsigned int rankB(unsigned int target_num) {
 		cout << "lower_bound_rank_b:" << lower_bound_rank_b << ", ";
 		cout << "gap_rank_b:" << gap_rank_b << ", ";
 		cout << "current_b_buffer_section:" << current_b_buffer_section << ", ";
-		for (outer = gap_rank_b * BIT_SECTION_SIZE_OF_CHAR;
-			 outer < (w - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR; outer++) {
+		for (outer = gap_rank_b*BIT_SECTION_SIZE_OF_CHAR;
+			 outer <= (w - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR; outer++) {
 			//every char
 			cout << "outer:" << outer << ", ";
 			for (inner = 0; inner < 8; inner++) {
@@ -202,7 +202,6 @@ unsigned int rankB(unsigned int target_num) {
 					prev_rank_b++;
 					if (prev_rank_b == target_num) {
 						cout << "inner:" << inner << ", ";
-						cout << "inner:" << (128>>3) << ", ";
 						result_rank_b = inner + 8 * (outer + current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR);
 						return result_rank_b;
 					}
@@ -254,6 +253,8 @@ void generateBB() {
 	for (i = 0; i < rank_b_section_count; i++) {
 		//cout << i << ", " <<rank_b[i]<< endl;
 	}
+
+	cout<<count_of_s<<endl;
 	for (i = 0; i < count_of_s; i++) {
 		cout << i + 1 << ", " << rankB(i) << endl;
 	}
@@ -285,7 +286,7 @@ void readSB(string &fileName) {
 			}
 		}
 		unsigned prev_chars_count = 0;
-		count_of_s += strlen(s_buffer);
+		count_of_s += current_s_buffer_size;
 	}
 	//rank_b select_b
 	while (!feof(bp)) {
@@ -307,7 +308,7 @@ void readSB(string &fileName) {
 					}
 				}
 			}
-			if ((i * 8) % SECTIONSIZE == 0) {
+			if ((i+1) % BIT_SECTION_SIZE_OF_CHAR == 0) {
 				rank_b.push_back(b_count);
 				rank_b_section_count++;
 			}
