@@ -14,6 +14,7 @@ using namespace std;
 #define CHARSCALE 128
 
 #define SECTIONSIZE 8
+#define BIT_SECTION_SIZE_OF_CHAR (SECTIONSIZE/8)
 
 void printBitArray(std::vector<bool> &arr);
 void writeBitToBitArray(vector<bool> &arr, int l);

@@ -5,5 +5,5 @@ CXX := /usr/bin/clang++
 all: rlebwt
 
 rlebwt:
-	$(CXX) $(CXXFLAGS) -o rlebwt rlebwt.cpp utils.cpp
+	$(CXX) $(CXXFLAGS) -o rlebwt rlebwt.cpp
 

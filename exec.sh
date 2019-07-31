@@ -2,12 +2,12 @@
 
 make -B
 
-fn="./test/simple2"
+fn="./test/simple3"
 
 rm -f "$fn.bb"
 
 ./rlebwt -m $fn ./index ana
 
- xxd -b "$fn.bb"
+ xxd -b "$fn.b"
 
  xxd -b "$fn.bb1"
