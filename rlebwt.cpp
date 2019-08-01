@@ -248,23 +248,23 @@ unsigned int getZeros(unsigned int location){
 
 //write the zeros value into the bb_buffer
 void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros){
-	//cout<<current_bb_buffer_size<<endl;
 	while(zeros>0){
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
-		//cout<<baseline_bb<<", "<<zeros<<endl;
 		if((baseline_bb/8)>=current_bb_buffer_size+BB_BUFFER_SIZE*current_bb_buffer_section){
-			cout<<"reading"<<endl;
+			//cout<<"reading"<<endl;
 			fseek(bbp,-BB_BUFFER_SIZE,1);
+			//rewind(bbp);
 			fwrite(bb_buffer,1,current_bb_buffer_size,bbp);
 			current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,BB_BUFFER_SIZE,bbp);
 			current_bb_buffer_section++;
 		}
 		char_loc=baseline_bb/8-current_bb_buffer_section*BB_BUFFER_SIZE;
-		cout<<baseline_bb<<", "<<char_loc<<", "<<(int)(bb_buffer[char_loc])<<endl;
+		//cout<<baseline_bb<<", "<<char_loc<<", "<<(1<<baseline_bb%8)<<","<< (255-(1>>(baseline_bb%8)))<<endl;
+		//cout<<baseline_bb<<", "<<char_loc<<", "<<(int)(bb_buffer[char_loc])<<","<< (255-(1>>(baseline_bb%8)))<<endl;
 		//cout<<char_loc<<", "<<(int)(bb_buffer[char_loc])<<endl;
-		bb_buffer[char_loc] &= 0;
-		//bb_buffer[char_loc] &= (255-(1>>baseline_bb%8));
+		//bb_buffer[char_loc] &= 0;
+		bb_buffer[char_loc] &= (255-(128>>(baseline_bb%8)));
 		/*
 		cout<<baseline_bb/8<<endl;
 		cout<<current_bb_buffer_section*BB_BUFFER_SIZE<<endl;
@@ -283,7 +283,6 @@ void generateBB() {
 	current_s_buffer_size=(unsigned int)fread(s_buffer, 1,MAXSIZE, sp);
 	current_b_buffer_size=(unsigned int)fread(b_buffer, 1,MAXSIZE, bp);
 	current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,BB_BUFFER_SIZE,bbp);
-	cout<<bb_buffer<<endl;
 	current_bb_buffer_section=0;
 	unsigned int zeros=0;
 	unsigned int baseline_bb=0;
@@ -303,6 +302,7 @@ void generateBB() {
 		}
 	}
 	//final write
+	fseek(bbp,current_bb_buffer_section*BB_BUFFER_SIZE,0);
 	fwrite(bb_buffer,1,current_bb_buffer_size,bbp);
 }
 
