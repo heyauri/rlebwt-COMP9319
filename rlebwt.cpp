@@ -252,23 +252,14 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros){
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
 		if((baseline_bb/8)>=current_bb_buffer_size+BB_BUFFER_SIZE*current_bb_buffer_section){
-			//cout<<"reading"<<endl;
+			cout<<"reading"<<endl;
 			fseek(bbp,-BB_BUFFER_SIZE,1);
-			//rewind(bbp);
 			fwrite(bb_buffer,1,current_bb_buffer_size,bbp);
 			current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,BB_BUFFER_SIZE,bbp);
 			current_bb_buffer_section++;
 		}
 		char_loc=baseline_bb/8-current_bb_buffer_section*BB_BUFFER_SIZE;
-		//cout<<baseline_bb<<", "<<char_loc<<", "<<(1<<baseline_bb%8)<<","<< (255-(1>>(baseline_bb%8)))<<endl;
-		//cout<<baseline_bb<<", "<<char_loc<<", "<<(int)(bb_buffer[char_loc])<<","<< (255-(1>>(baseline_bb%8)))<<endl;
-		//cout<<char_loc<<", "<<(int)(bb_buffer[char_loc])<<endl;
-		//bb_buffer[char_loc] &= 0;
 		bb_buffer[char_loc] &= (255-(128>>(baseline_bb%8)));
-		/*
-		cout<<baseline_bb/8<<endl;
-		cout<<current_bb_buffer_section*BB_BUFFER_SIZE<<endl;
-		 */
 		baseline_bb++;
 		zeros--;
 	}
@@ -292,7 +283,7 @@ void generateBB() {
 		}
 		j = 0;
 		while (j < lens_table[i]) {
-			//cout<<(char)i<<","<<getZeros(rankB(occS(j,i)))<<endl;
+			cout<<(char)i<<","<<getZeros(rankB(occS(j,i)))<<endl;
 			zeros=getZeros(rankB(occS(j,i)));
 			baseline_bb++;
 			if(zeros>0){
@@ -305,6 +296,9 @@ void generateBB() {
 	fseek(bbp,current_bb_buffer_section*BB_BUFFER_SIZE,0);
 	fwrite(bb_buffer,1,current_bb_buffer_size,bbp);
 }
+
+//if bb exists, get the rank
+
 
 void readSB(string &fileName) {
 	bbFN = fileName + ".bb";
@@ -357,7 +351,10 @@ void readSB(string &fileName) {
 		}
 	}
 	if (!bbp) {
+		//initBB();
 		generateBB();
+	}else{
+
 	}
 	fclose(bbp);
 }
