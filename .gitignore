@@ -28,8 +28,9 @@ front-end/.gitignore
 
 cmake-build-debug
 index
-test
 CMakeLists.txt
 rlebwt
 rlfm.cpp
+files
+test/large.*
 

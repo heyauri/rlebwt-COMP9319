@@ -2,7 +2,7 @@
 
 make -B
 
-fn="./test/simple1"
+fn="./test/simple3"
 
 rm -f "$fn.bb"
 
@@ -10,8 +10,8 @@ rm -f "$fn.bb"
 
 #time valgrind --tool=massif --pages-as-heap=yes  ./rlebwt  -m $fn  ./index  "in"
 
-# xxd -b "$fn.bb"
+ xxd -b "$fn.bb"
 
-# xxd -b "$fn.bb1"
+ xxd -b "$fn.bb1"
 
 diff "$fn.bb" "$fn.bb1"
