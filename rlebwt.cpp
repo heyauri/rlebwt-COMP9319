@@ -33,7 +33,7 @@ unsigned int suffix_b1_start = 0;
 unsigned int current_b_buffer_size = 0, current_b_buffer_section = 0;
 
 //for bb
-unsigned int current_bb_buffer_size=0,current_bb_buffer_section=0;
+unsigned int current_bb_buffer_size = 0, current_bb_buffer_section = 0;
 
 
 FILE *sp, *bp, *bbp;
@@ -170,11 +170,32 @@ unsigned int selectS(unsigned int target_num, unsigned int &target_char_int) {
 	}
 }
 
+//rankS : target num should larger than 0;now calculate the char at target_num itself also.
+unsigned int lower_bound_section_rank_s = 0;
+unsigned int prev_sum_of_char = 0;
+unsigned int rankS(unsigned int target_num, char target_char) {
+	int target_char_int = (int) target_char;
+	if (target_num > count_of_s) {
+		return lens_table[target_char_int];
+	}
+	lower_bound_section_rank_s = target_num / SECTIONSIZE;
+	prev_sum_of_char = select_s[lower_bound_section_rank_s];
+	readSBySection(lower_bound_section_rank_s);
+	for (e = lower_bound_section_rank_s - current_s_buffer_section;
+		 e <= target_num - lower_bound_section_rank_s * SECTIONSIZE; e++){
+		if(s_buffer[e]==target_char){
+			prev_sum_of_char++;
+		}
+	}
+	return prev_sum_of_char;
+}
+
 //selectB
 int gap_select_b = 0;
 unsigned int lower_bound_select_b = 0;
 unsigned int result_select_b = 0, prev_select_b = 0;
 unsigned int outer = 0, inner = 0;
+
 unsigned int selectB(unsigned int target_num) {
 	target_num += 1;
 	for (w = 1; w <= select_b_section_count; w++) {
@@ -188,7 +209,7 @@ unsigned int selectB(unsigned int target_num) {
 	gap_select_b = lower_bound_select_b - current_b_buffer_section;
 	//in buffer
 	if (gap_select_b >= 0 && (gap_select_b < (8 * MAXSIZE / SECTIONSIZE))) {
-		for (outer = gap_select_b*BIT_SECTION_SIZE_OF_CHAR;
+		for (outer = gap_select_b * BIT_SECTION_SIZE_OF_CHAR;
 			 outer <= (w - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR; outer++) {
 			//every char
 			for (inner = 0; inner < 8; inner++) {
@@ -222,42 +243,49 @@ unsigned int selectB(unsigned int target_num) {
 	return 0;
 }
 
+//rankB
+unsigned int rankB(unsigned int target_num){
+
+}
+
 //get the following zero of a bit 1 inside B
-unsigned int char_loc=0;
-unsigned int section_of_loc=0;
-unsigned int getZeros(unsigned int location){
-	unsigned int result=0;
-	while(true){
+unsigned int char_loc = 0;
+unsigned int section_of_loc = 0;
+
+unsigned int getZeros(unsigned int location) {
+	unsigned int result = 0;
+	while (true) {
 		location++;
-		char_loc=location/8;
+		char_loc = location / 8;
 		//if this char in the current buffer?
-		section_of_loc=char_loc/BIT_SECTION_SIZE_OF_CHAR;
+		section_of_loc = char_loc / BIT_SECTION_SIZE_OF_CHAR;
 		//not in buffer
-		if(current_b_buffer_section>section_of_loc || section_of_loc-current_b_buffer_section>=MAXSIZE/SECTIONSIZE){
+		if (current_b_buffer_section > section_of_loc ||
+			section_of_loc - current_b_buffer_section >= MAXSIZE / SECTIONSIZE) {
 			readBBySection(section_of_loc);
 		}
-		if(!(b_buffer[location/8-current_b_buffer_section*BIT_SECTION_SIZE_OF_CHAR] & (128 >> (location%8)))){
+		if (!(b_buffer[location / 8 - current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR] & (128 >> (location % 8)))) {
 			result++;
-		}else{
+		} else {
 			return result;
 		}
 	}
 }
 
 //write the zeros value into the bb_buffer
-void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros){
-	while(zeros>0){
+void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
+	while (zeros > 0) {
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
-		if((baseline_bb/8)>=current_bb_buffer_size+BB_BUFFER_SIZE*current_bb_buffer_section){
-			cout<<"reading"<<endl;
-			fseek(bbp,-BB_BUFFER_SIZE,1);
-			fwrite(bb_buffer,1,current_bb_buffer_size,bbp);
-			current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,BB_BUFFER_SIZE,bbp);
+		if ((baseline_bb / 8) >= current_bb_buffer_size + BB_BUFFER_SIZE * current_bb_buffer_section) {
+			cout << "reading" << endl;
+			fseek(bbp, -BB_BUFFER_SIZE, 1);
+			fwrite(bb_buffer, 1, current_bb_buffer_size, bbp);
+			current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, BB_BUFFER_SIZE, bbp);
 			current_bb_buffer_section++;
 		}
-		char_loc=baseline_bb/8-current_bb_buffer_section*BB_BUFFER_SIZE;
-		bb_buffer[char_loc] &= (255-(128>>(baseline_bb%8)));
+		char_loc = baseline_bb / 8 - current_bb_buffer_section * BB_BUFFER_SIZE;
+		bb_buffer[char_loc] &= (255 - (128 >> (baseline_bb % 8)));
 		baseline_bb++;
 		zeros--;
 	}
@@ -269,12 +297,13 @@ void generateBB() {
 	rewind(sp);
 	rewind(bp);
 	rewind(bbp);
-	current_s_buffer_size=(unsigned int)fread(s_buffer, 1,MAXSIZE, sp);
-	current_b_buffer_size=(unsigned int)fread(b_buffer, 1,MAXSIZE, bp);
-	current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,BB_BUFFER_SIZE,bbp);
-	current_bb_buffer_section=0;
-	unsigned int zeros=0;
-	unsigned int baseline_bb=0;
+	current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
+	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
+	current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, BB_BUFFER_SIZE, bbp);
+	current_bb_buffer_section = 0;
+	cout<<rankS(5,'n')<<endl;
+	unsigned int zeros = 0;
+	unsigned int baseline_bb = 0;
 	for (i = 0; i < CHARSCALE; i++) {
 		if (lens_table[i] < 1) {
 			continue;
@@ -282,17 +311,17 @@ void generateBB() {
 		j = 0;
 		while (j < lens_table[i]) {
 			//cout<<(char)i<<","<<getZeros(selectB(selectS(j,i)))<<endl;
-			zeros=getZeros(selectB(selectS(j,i)));
+			zeros = getZeros(selectB(selectS(j, i)));
 			baseline_bb++;
-			if(zeros>0){
-				writeZerosIntoBB(baseline_bb,zeros);
+			if (zeros > 0) {
+				writeZerosIntoBB(baseline_bb, zeros);
 			}
 			j++;
 		}
 	}
 	//final write
-	fseek(bbp,current_bb_buffer_section*BB_BUFFER_SIZE,0);
-	fwrite(bb_buffer,1,current_bb_buffer_size,bbp);
+	fseek(bbp, current_bb_buffer_section * BB_BUFFER_SIZE, 0);
+	fwrite(bb_buffer, 1, current_bb_buffer_size, bbp);
 }
 
 //if bb exists, get the rank
@@ -308,8 +337,8 @@ void readSB(string &fileName) {
 	if (!sp || !bp) {
 		cout << fileName + ".s/.b not exists!" << endl;
 	}
-	//c_table rank_s select_s
- 	while (!feof(sp)) {
+	// rank_s select_s
+	while (!feof(sp)) {
 		current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 		for (i = 0; i < current_s_buffer_size; i++) {
 			lens_table[(int) s_buffer[i]]++;
@@ -320,8 +349,13 @@ void readSB(string &fileName) {
 				s_section_count++;
 			}
 		}
-		unsigned prev_chars_count = 0;
 		count_of_s += current_s_buffer_size;
+	}
+	//c_table
+	unsigned int prev_chars_count = 0;
+	for (i = 0; i < CHARSCALE; i++) {
+		cs_table[i] = prev_chars_count;
+		prev_chars_count += lens_table[i];
 	}
 	//rank_b select_b
 	while (!feof(bp)) {
@@ -339,7 +373,7 @@ void readSB(string &fileName) {
 					}
 				}
 			}
-			if ((i+1) % BIT_SECTION_SIZE_OF_CHAR == 0) {
+			if ((i + 1) % BIT_SECTION_SIZE_OF_CHAR == 0) {
 				select_b.push_back(b_count);
 				select_b_section_count++;
 			}
@@ -348,7 +382,7 @@ void readSB(string &fileName) {
 	if (!bbp) {
 		//initBB();
 		generateBB();
-	}else{
+	} else {
 
 	}
 	fclose(bbp);

@@ -2,7 +2,7 @@
 
 make -B
 
-fn="./test/simple3"
+fn="./test/simple1"
 
 rm -f "$fn.bb"
 
