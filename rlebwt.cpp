@@ -278,12 +278,6 @@ unsigned int selectB(unsigned int target_num) {
 		prev_sum_select_b--;
 	}
 	start_outer=(pos_select_b-current_b_buffer_section*SECTIONSIZE)/8;
-
-	if(target_num==193){
-		cout<<pos_select_b<<endl;
-	}
-
-
 	for(inner=0;inner<start_pos_b;inner++){
 		pos_select_b--;
 		if(b_buffer[start_outer] & (128 >> inner)){
@@ -311,6 +305,7 @@ unsigned int lower_bound_section_select_bb = 0;
 unsigned int pos_select_bb = 0,prev_sum_select_bb=0;
 unsigned int offset_section_select_bb = 0,start_pos=0;
 unsigned int selectBB(unsigned int target_num) {
+	target_num+=1;
 	if(target_num%SECTIONSIZE==0){
 		return select_bb[target_num / SECTIONSIZE];
 	}
@@ -324,13 +319,14 @@ unsigned int selectBB(unsigned int target_num) {
 	if(prev_sum_select_bb>0){
 		prev_sum_select_bb--;
 	}
+	start_outer=(pos_select_b-current_b_buffer_section*SECTIONSIZE)/8;
 	for(inner=0;inner<start_pos;inner++){
 		pos_select_bb--;
-		if(bb_buffer[offset_section_select_bb * BIT_SECTION_SIZE_OF_CHAR] & (128 >> inner)){
+		if(bb_buffer[start_outer] & (128 >> inner)){
 			prev_sum_select_bb--;
 		}
 	}
-	for (outer = offset_section_select_bb * BIT_SECTION_SIZE_OF_CHAR;
+	for (outer = start_outer;
 		 outer < current_bb_buffer_size; outer++) {
 		//cout<<"outer:"<<outer<<", ";
 		for(inner=0;inner<8;inner++){
