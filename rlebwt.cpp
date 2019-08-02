@@ -29,7 +29,7 @@ unsigned int current_s_buffer_size = 0;
 //for b
 vector<unsigned int> rank_b, select_b;
 unsigned int rank_b_section_count = 0, select_b_section_count = 0, char_b_count = 0;
-unsigned int suffix_b1_start = 0;
+unsigned int count_of_b = 0,suffix_b1_start;
 unsigned int current_b_buffer_size = 0, current_b_buffer_section = 0;
 
 //for bb
@@ -85,14 +85,14 @@ void getBitArray(vector<bool> &arr, char *str, unsigned int &size) {
 
 void initBB() {
 	bbp = fopen(bbFN.c_str(), "w+");
-	for (i = 0; i < select_b_section_count; i++) {
+	for (i = 0; i < rank_b_section_count; i++) {
 		char tmp[SECTIONSIZE / 8];
 		for (j = 0; j < SECTIONSIZE; j += 8) {
 			tmp[j / 8] = -1;
 		}
 		fwrite(tmp, SECTIONSIZE / 8, 1, bbp);
 	}
-	if (char_b_count > (SECTIONSIZE * select_b_section_count / 8)) {
+	if (char_b_count > (SECTIONSIZE * rank_b_section_count / 8)) {
 		unsigned int left_count = (unsigned int) char_b_count % (SECTIONSIZE / 8);
 		char tmp[left_count];
 		for (j = 0; j < left_count; j++) {
@@ -198,14 +198,14 @@ unsigned int outer = 0, inner = 0;
 
 unsigned int selectB(unsigned int target_num) {
 	target_num += 1;
-	for (w = 1; w <= select_b_section_count; w++) {
-		if (target_num <= select_b[w]) {
+	for (w = 1; w <= rank_b_section_count; w++) {
+		if (target_num <= rank_b[w]) {
 			break;
 		}
 	}
 	lower_bound_select_b = w - 1;
-	result_select_b = select_b[lower_bound_select_b];
-	prev_select_b = select_b[lower_bound_select_b];
+	result_select_b = rank_b[lower_bound_select_b];
+	prev_select_b = rank_b[lower_bound_select_b];
 	gap_select_b = lower_bound_select_b - current_b_buffer_section;
 	//in buffer
 	if (gap_select_b >= 0 && (gap_select_b < (8 * MAXSIZE / SECTIONSIZE))) {
@@ -244,8 +244,32 @@ unsigned int selectB(unsigned int target_num) {
 }
 
 //rankB
+unsigned int lower_bound_section_rank_b=0;
+unsigned int prev_sum_rank_b=0;
 unsigned int rankB(unsigned int target_num){
+	if(target_num>suffix_b1_start){
+		return count_of_b;
+	}
+	lower_bound_section_rank_b=target_num/SECTIONSIZE;
+	prev_sum_rank_b=rank_b[lower_bound_section_rank_b];
+	readBBySection(lower_bound_section_rank_b);
+	for(outer=(lower_bound_section_rank_b-current_b_buffer_section)*BIT_SECTION_SIZE_OF_CHAR;
+	outer<(target_num/8-lower_bound_section_rank_b*BIT_SECTION_SIZE_OF_CHAR);outer++){
+		for(inner=0;inner<8;inner++){
+			if(b_buffer[outer] & (128>>inner)){
+				prev_sum_rank_b++;
+			}
+		}
+	}
+	if(target_num%8>0){
+		for(inner=0;inner<target_num%8;inner++){
+			if(b_buffer[outer] & (128>>inner)){
+				prev_sum_rank_b++;
+			}
+		}
+	}
 
+	return prev_sum_rank_b;
 }
 
 //get the following zero of a bit 1 inside B
@@ -278,7 +302,7 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
 		if ((baseline_bb / 8) >= current_bb_buffer_size + BB_BUFFER_SIZE * current_bb_buffer_section) {
-			cout << "reading" << endl;
+			//cout << "reading" <<current_bb_buffer_section<< endl;
 			fseek(bbp, -BB_BUFFER_SIZE, 1);
 			fwrite(bb_buffer, 1, current_bb_buffer_size, bbp);
 			current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, BB_BUFFER_SIZE, bbp);
@@ -301,7 +325,11 @@ void generateBB() {
 	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
 	current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, BB_BUFFER_SIZE, bbp);
 	current_bb_buffer_section = 0;
-	cout<<rankS(5,'n')<<endl;
+
+	for(i=1;i<=current_b_buffer_size*8;i++){
+		cout<<rankB(i)<<endl;
+	}
+	//cout<<rankB(12)<<endl;
 	unsigned int zeros = 0;
 	unsigned int baseline_bb = 0;
 	for (i = 0; i < CHARSCALE; i++) {
@@ -362,22 +390,29 @@ void readSB(string &fileName) {
 		current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
 		char_b_count += current_b_buffer_size;
 		//b_count : how many 1 in b
-		unsigned int b_count = select_b[select_b_section_count];
+		unsigned int b_count = rank_b[rank_b_section_count];
 		for (i = 0; i < current_b_buffer_size; i++) {
 			for (j = 0; j < 8; j++) {
 				if (b_buffer[i] & (128 >> j)) {
 					b_count++;
+					/*
 					if (b_count % SECTIONSIZE == 0 && b_count > 0) {
 						rank_b.push_back(select_b_section_count * SECTIONSIZE + (i * 8 + j) % SECTIONSIZE);
 						rank_b_section_count++;
 					}
+					 */
+					if(b_count==count_of_s+1){
+						suffix_b1_start = rank_b_section_count * SECTIONSIZE + (i * 8 + j) % SECTIONSIZE;
+						break;
+					}
 				}
 			}
 			if ((i + 1) % BIT_SECTION_SIZE_OF_CHAR == 0) {
-				select_b.push_back(b_count);
-				select_b_section_count++;
+				rank_b.push_back(b_count);
+				rank_b_section_count++;
 			}
 		}
+		count_of_b=b_count;
 	}
 	if (!bbp) {
 		//initBB();

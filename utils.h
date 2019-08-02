@@ -17,7 +17,7 @@ using namespace std;
 #define BIT_SECTION_SIZE_OF_CHAR (SECTIONSIZE/8)
 
 //in char i.e. 8 bits
-#define BB_BUFFER_SIZE 204800
+#define BB_BUFFER_SIZE 102400
 
 void printBitArray(std::vector<bool> &arr);
 void writeBitToBitArray(vector<bool> &arr, int l);
