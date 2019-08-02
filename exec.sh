@@ -11,10 +11,14 @@ rm -f "$fn.bb"
 
 #time valgrind --tool=massif --pages-as-heap=yes  ./rlebwt  -m $fn  ./index  "in"
 
- xxd -b "$fn.b"
+# xxd -b "$fn.b"
 
- xxd -b "$fn.bb"
+if [[ "$fn" =~ "simple" ]]
+then
 
-# xxd -b "$fn.bb1"
+     xxd -b "$fn.bb"
+
+     xxd -b "$fn.bb1"
+fi
 
 diff "$fn.bb" "$fn.bb1"

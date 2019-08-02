@@ -17,7 +17,8 @@ unsigned int i, j, k, a, s, d, q, w, e, sbb;
 std::string bbFN, bFN, sFN;
 char s_buffer[MAXSIZE];
 char b_buffer[MAXSIZE];
-char bb_buffer[BB_BUFFER_SIZE];
+char bb_buffer[MAXSIZE];
+char bb_buffer_for_generate[BB_BUFFER_SIZE];
 
 //for s
 unsigned int cs_table[CHARSCALE], lens_table[CHARSCALE];
@@ -52,11 +53,6 @@ void init() {
 	select_bb.push_back(0);
 }
 
-void newSectionOfRankS() {
-	for (i = 0; i < CHARSCALE; i++) {
-		select_s.push_back(0);
-	}
-}
 
 void printLengthTableOfS() {
 	for (int i = 0; i < CHARSCALE; i++) {
@@ -66,24 +62,6 @@ void printLengthTableOfS() {
 	}
 }
 
-
-void printBitArray(vector<bool> &arr) {
-	for (q = 0; q < arr.size(); q++) {
-		cout << arr[q];
-		if ((q + 1) % 8 == 0) {
-			cout << " ";
-		}
-	}
-	cout << endl;
-}
-
-void getBitArray(vector<bool> &arr, char *str, unsigned int &size) {
-	for (i = 0; i < size; i++) {
-		for (j = 7; j > -1; j--) {
-			arr.push_back(str[i] & (1 << j));
-		}
-	}
-}
 
 void initBB() {
 	bbp = fopen(bbFN.c_str(), "w+");
@@ -316,14 +294,14 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
 		if ((baseline_bb / 8) >= current_bb_buffer_size + BB_BUFFER_SIZE * current_bb_buffer_section) {
-			//cout << "reading" <<current_bb_buffer_section<< endl;
+			cout << "reading" <<current_bb_buffer_section<< endl;
 			fseek(bbp, -BB_BUFFER_SIZE, 1);
-			fwrite(bb_buffer, 1, current_bb_buffer_size, bbp);
-			current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, BB_BUFFER_SIZE, bbp);
+			fwrite(bb_buffer_for_generate, 1, current_bb_buffer_size, bbp);
+			current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
 			current_bb_buffer_section++;
 		}
 		char_loc = baseline_bb / 8 - current_bb_buffer_section * BB_BUFFER_SIZE;
-		bb_buffer[char_loc] &= (255 - (128 >> (baseline_bb % 8)));
+		bb_buffer_for_generate[char_loc] &= (255 - (128 >> (baseline_bb % 8)));
 		baseline_bb++;
 		zeros--;
 	}
@@ -333,25 +311,17 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 unsigned int lower_bound_section_select_bb = 0;
 unsigned int pos_select_bb = 0,prev_sum_select_bb=0;
 unsigned int offset_section_select_bb = 0,start_pos=0;
-
 unsigned int selectBB(unsigned int target_num) {
-
 	if(target_num%SECTIONSIZE==0){
 		return select_bb[target_num / SECTIONSIZE];
 	}
-
 	prev_sum_select_bb=target_num-(target_num%SECTIONSIZE);
 	pos_select_bb = select_bb[target_num / SECTIONSIZE];
-
-
 	//result is a position.
 	lower_bound_section_select_bb = pos_select_bb / SECTIONSIZE;
 	start_pos=pos_select_bb%8;
 	readBBBySection(lower_bound_section_select_bb);
 	offset_section_select_bb = lower_bound_section_select_bb - current_bb_buffer_section;
-
-	//cout<<"offset_section_select_bb:"<<offset_section_select_bb<<", ";
-
 	if(prev_sum_select_bb>0){
 		prev_sum_select_bb--;
 	}
@@ -361,11 +331,6 @@ unsigned int selectBB(unsigned int target_num) {
 			prev_sum_select_bb--;
 		}
 	}
-
-	//cout<<"prev_sum_select_bb:"<<prev_sum_select_bb<<", ";
-	//cout<<"pos_select_bb:"<<pos_select_bb<<", ";
-
-
 	for (outer = offset_section_select_bb * BIT_SECTION_SIZE_OF_CHAR;
 		 outer < current_bb_buffer_size; outer++) {
 		//cout<<"outer:"<<outer<<", ";
@@ -392,9 +357,8 @@ void generateBB() {
 	rewind(bbp);
 	current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
-	current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, BB_BUFFER_SIZE, bbp);
+	current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
 	current_bb_buffer_section = 0;
-
 	//cout<<rankB(12)<<endl;
 	unsigned int zeros = 0;
 	unsigned int total_zeros = 0;
@@ -405,7 +369,6 @@ void generateBB() {
 		}
 		j = 0;
 		while (j < lens_table[i]) {
-			//cout<<(char)i<<","<<getZeros(selectB(selectS(j,i)))<<endl;
 			zeros = getZeros(selectB(selectS(j, i)));
 			baseline_bb++;
 			if (zeros > 0) {
@@ -423,20 +386,51 @@ void generateBB() {
 	count_bb_1=baseline_bb-total_zeros;
 	//final write
 	fseek(bbp, current_bb_buffer_section * BB_BUFFER_SIZE, 0);
-	fwrite(bb_buffer, 1, current_bb_buffer_size, bbp);
+	fwrite(bb_buffer_for_generate, 1, current_bb_buffer_size, bbp);
+	rewind(bbp);
+	current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,MAXSIZE,bbp);
+	current_bb_buffer_section=0;
 
-	//cout << select_bb_section_count << endl;
+	/*
+	for(i=1;i<=baseline_bb-total_zeros;i++){
+		cout<<i<<", "<<select_bb[i/8]<<", "<<selectBB(i)<<endl;
+	}
+	 */
 
-	for (i = 1; i <= select_bb_section_count; i++) {
-		cout <<i<<" , "<< select_bb[i] << endl;
-	}
-	for (i = 1; i <= count_bb_1; i++) {
-		cout <<i<<" , "<< selectBB(i) << endl;
-	}
-	cout<<endl;
+
 }
 
 //if bb exists, get the select table;
+void constructBBIndex(){
+	//cout<<"construct index"<<endl;
+	rewind(bbp);
+	unsigned int bb_count=0;
+	unsigned int prev_bb_char_count=0;
+	while (!feof(bbp)) {
+		current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, MAXSIZE, bbp);
+		for (i = 0; i < current_b_buffer_size; i++) {
+			for (j = 0; j < 8; j++) {
+				if (bb_buffer[i] & (128 >> j)) {
+					bb_count++;
+					//select_bb : x: the section num of each section 1's y: the position.
+					if ((bb_count+1) % SECTIONSIZE == 0) {
+						select_bb.push_back(prev_bb_char_count+8*i+j+1);
+						select_bb_section_count++;
+					}
+				}
+			}
+		}
+		prev_bb_char_count+=current_bb_buffer_size;
+	}
+
+	/*
+	for(i=1;i<=count_of_s;i++){
+		cout<<i<<", "<<select_bb[i/8]<<", "<<selectBB(i)<<endl;
+	}
+	 */
+
+
+}
 
 
 void readSB(string &fileName) {
@@ -479,12 +473,6 @@ void readSB(string &fileName) {
 			for (j = 0; j < 8; j++) {
 				if (b_buffer[i] & (128 >> j)) {
 					b_count++;
-					/*
-					if (b_count % SECTIONSIZE == 0 && b_count > 0) {
-						rank_b.push_back(select_b_section_count * SECTIONSIZE + (i * 8 + j) % SECTIONSIZE);
-						rank_b_section_count++;
-					}
-					 */
 					if (b_count == count_of_s + 1) {
 						suffix_b1_start = rank_b_section_count * SECTIONSIZE + (i * 8 + j) % SECTIONSIZE;
 						break;
@@ -499,12 +487,10 @@ void readSB(string &fileName) {
 		count_of_b = b_count;
 	}
 	if (!bbp) {
-		//initBB();
 		generateBB();
 	} else {
-
+		constructBBIndex();
 	}
-	fclose(bbp);
 }
 
 
