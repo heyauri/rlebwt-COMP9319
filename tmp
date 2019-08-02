@@ -135,8 +135,6 @@ unsigned int selectS(unsigned int target_num, unsigned int target_char_int) {
 	prev_select_s = (unsigned int) select_s[lower_bound_select_s * CHARSCALE + target_char_int];
 	//if the target section in the current buffer?
 	gap_select_s = (k - 1) - current_s_buffer_section;
-	readSBySection(lower_bound_select_s);
-
 	//yes.
 	if (gap_select_s >= 0 && (gap_select_s < (MAXSIZE / SECTIONSIZE))) {
 		for (a = gap_select_s * SECTIONSIZE; a < (k - current_s_buffer_section) * SECTIONSIZE; a++) {
@@ -257,54 +255,56 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 		zeros--;
 	}
 }
-
 //selectB
-unsigned int prev_sum_select_b=0,pos_select_b=0,start_pos_b,start_outer=0;
-unsigned int lower_bound_section_select_b=0,offset_section_select_b=0;
+int gap_select_b = 0;
+unsigned int lower_bound_select_b = 0;
+unsigned int result_select_b = 0, prev_select_b = 0;
+
 unsigned int selectB(unsigned int target_num) {
-	target_num+=1;
-	if(target_num%SECTIONSIZE==0){
-		return select_b[target_num / SECTIONSIZE];
-	}
-	prev_sum_select_b=target_num-(target_num%SECTIONSIZE);
-	pos_select_b = select_b[target_num / SECTIONSIZE];
-	//result is a position.
-	lower_bound_section_select_b = pos_select_b / SECTIONSIZE;
-	//start pos 0-7
-	start_pos_b=pos_select_b%8;
-	readBBySection(lower_bound_section_select_b);
-	offset_section_select_b = lower_bound_section_select_b - current_b_buffer_section;
-	if(prev_sum_select_b>0){
-		prev_sum_select_b--;
-	}
-	start_outer=(pos_select_b-current_b_buffer_section*SECTIONSIZE)/8;
-
-	if(target_num==193){
-		cout<<pos_select_b<<endl;
-	}
-
-
-	for(inner=0;inner<start_pos_b;inner++){
-		pos_select_b--;
-		if(b_buffer[start_outer] & (128 >> inner)){
-			prev_sum_select_b--;
+	target_num += 1;
+	for (w = 1; w <= rank_b_section_count; w++) {
+		if (target_num <= rank_b[w]) {
+			break;
 		}
 	}
-	for (outer = start_outer;
-		 outer < current_b_buffer_size; outer++) {
-		//cout<<"outer"<<outer<<",";
-		for(inner=0;inner<8;inner++){
-			if(b_buffer[outer] & (128 >> inner)){
-				prev_sum_select_b++;
-				if(prev_sum_select_b==target_num){
-					pos_select_b+=inner;
-					return pos_select_b;
+	lower_bound_select_b = w - 1;
+	result_select_b = rank_b[lower_bound_select_b];
+	prev_select_b = rank_b[lower_bound_select_b];
+	gap_select_b = lower_bound_select_b - current_b_buffer_section;
+	//in buffer
+	if (gap_select_b >= 0 && (gap_select_b < (8 * MAXSIZE / SECTIONSIZE))) {
+		for (outer = gap_select_b * BIT_SECTION_SIZE_OF_CHAR;
+			 outer <= (w - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR; outer++) {
+			//every char
+			for (inner = 0; inner < 8; inner++) {
+				//every bit in each char
+				if (b_buffer[outer] & (128 >> inner)) {
+					prev_select_b++;
+					if (prev_select_b == target_num) {
+						result_select_b = inner + 8 * (outer + current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR);
+						return result_select_b;
+					}
 				}
 			}
 		}
-		pos_select_b+=8;
+	} else {
+		//not in buffer
+		readBBySection(lower_bound_select_b);
+		for (outer = 0; outer < BIT_SECTION_SIZE_OF_CHAR; outer++) {
+			//every char
+			for (inner = 0; inner < 8; inner++) {
+				//every bit in each char
+				if (b_buffer[outer] & (128 >> inner)) {
+					prev_select_b++;
+					if (prev_select_b == target_num) {
+						result_select_b = inner + 8 * (outer + current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR);
+						return result_select_b;
+					}
+				}
+			}
+		}
 	}
-	return 999;
+	return 0;
 }
 //select bb
 unsigned int lower_bound_section_select_bb = 0;
@@ -365,7 +365,9 @@ void generateBB() {
 	/*
 	for(i=0;i<=count_of_s;i++){
 		cout<<i+1<<", "<<select_b[i/SECTIONSIZE]<<", "<<selectB(i)<<endl;
-	}*/
+	}
+	 */
+
 
 	for (i = 0; i < CHARSCALE; i++) {
 		if (lens_table[i] < 1) {
@@ -374,7 +376,7 @@ void generateBB() {
 		j = 0;
 		while (j < lens_table[i]) {
 
-			//cout<<(char)i<<","<<j<<":"<<selectS(j, i)<<":"<<selectB(selectS(j, i))<<endl;
+			cout<<(char)i<<","<<j<<":"<<selectS(j, i)<<":"<<selectB(selectS(j, i))<<endl;
 
 			zeros = getZeros(selectB(selectS(j, i)));
 			baseline_bb++;
@@ -477,9 +479,9 @@ void readSB(string &fileName) {
 			for (j = 0; j < 8; j++) {
 				if (b_buffer[i] & (128 >> j)) {
 					b_count++;
-					if ((b_count) % SECTIONSIZE == 0) {
-						//cout<<char_b_count*8+8*i+j<<endl;
-						select_b.push_back((char_b_count+i)*8+j);
+					if ((b_count+1) % SECTIONSIZE == 0) {
+						cout<<char_b_count+8*i+j+1<<endl;
+						select_b.push_back(char_b_count+8*i+j+1);
 						select_b_section_count++;
 					}
 					if (b_count == count_of_s + 1) {
