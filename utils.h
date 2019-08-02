@@ -14,12 +14,12 @@ using namespace std;
 #define CHARSCALE 128
 
 //section size should >= 8
-#define SECTIONSIZE 8
+#define SECTIONSIZE 2048
 #define BIT_SECTION_SIZE_OF_CHAR (SECTIONSIZE/8)
 
 //in char i.e. 8 bits
 //dont know why...this size can't be 102400 =_=...
-#define BB_BUFFER_SIZE 3
+#define BB_BUFFER_SIZE 204800
 
 void printBitArray(std::vector<bool> &arr);
 void writeBitToBitArray(vector<bool> &arr, int l);

@@ -2,12 +2,12 @@
 
 make -B
 
-fn="./test/simple2"
+fn="./test/dblp"
 
 rm -f "$fn.bb"
 
-#time ./rlebwt -m $fn ./index ana
-./rlebwt -m $fn ./index ana
+time ./rlebwt -m $fn ./index ana
+#./rlebwt -m $fn ./index ana
 
 #time valgrind --tool=massif --pages-as-heap=yes  ./rlebwt  -m $fn  ./index  "in"
 
