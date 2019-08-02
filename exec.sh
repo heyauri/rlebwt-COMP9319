@@ -13,7 +13,7 @@ rm -f "$fn.bb"
 
  xxd -b "$fn.b"
 
-# xxd -b "$fn.bb"
+ xxd -b "$fn.bb"
 
 # xxd -b "$fn.bb1"
 

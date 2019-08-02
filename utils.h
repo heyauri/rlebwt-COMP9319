@@ -13,7 +13,7 @@ using namespace std;
 #define BITMAX MAXSIZE*8
 #define CHARSCALE 128
 
-#define SECTIONSIZE 2048
+#define SECTIONSIZE 8
 #define BIT_SECTION_SIZE_OF_CHAR (SECTIONSIZE/8)
 
 //in char i.e. 8 bits
