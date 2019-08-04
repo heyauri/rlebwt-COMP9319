@@ -6,6 +6,7 @@
 #include <map>
 #include "sys/types.h"
 #include "sys/stat.h"
+#include <algorithm>
 
 #include "utils.h"
 
@@ -38,6 +39,9 @@ unsigned int current_bb_buffer_size = 0, current_bb_buffer_section = 0,select_bb
 unsigned int count_bb_1=0;
 vector<unsigned int> select_bb;
 
+//for search
+map<unsigned int,string> mappingTable;
+map<unsigned int,bool> prevPosTable;
 
 FILE *sp, *bp, *bbp;
 unsigned int count_of_s = 0;
@@ -430,7 +434,7 @@ void generateBB() {
 
 //if bb exists, get the select table;
 void constructBBIndex(){
-	cout<<"construct index"<<endl;
+	//cout<<"construct index"<<endl;
 	fclose(bbp);
 	bbp=fopen(bbFN.c_str(),"r+");
 	rewind(bbp);
@@ -569,15 +573,15 @@ unsigned int backwardSearch(string &target, unsigned int &f_result, unsigned int
 	int first_i=0,last_i=0;
 	int first_p=0,last_p=0;
 	//rank B : input is pos+1 (i*8+j +1)
-	cout<<"test"<<endl;
+	//cout<<"test"<<endl;
 	//cout<<rankB((unsigned)0)<<endl;
 	//cout<<rankB((unsigned)1)<<endl;
 	//cout<<rankB((unsigned)2)<<endl;
-	cout<<rankB((unsigned)11)<<endl;
-	cout<<rankS(212,'n')<<endl;
-	cout<<rankS(211,'n')<<endl;
-	cout<<selectBB(5)<<endl;
-	cout<<selectBBForSearch(7)<<endl;
+	//cout<<rankB((unsigned)11)<<endl;
+	//cout<<rankS(212,'n')<<endl;
+	//cout<<rankS(211,'n')<<endl;
+	//cout<<selectBB(5)<<endl;
+	//cout<<selectBBForSearch(7)<<endl;
 	//cout<<occS('a',3)<<endl;
 	//unsigned lst=selectBB(cs_table[current_char_int]+rankS(rankB(loc),current_char));
 	while((fst<=lst) && loc>=1){
@@ -585,32 +589,32 @@ unsigned int backwardSearch(string &target, unsigned int &f_result, unsigned int
 		current_char=target[loc-1];
 		current_char_int=(int)current_char;
 		first_i=fst-1;
-		cout<<"current_char: "<<current_char<<", "<<"rankB: fst-1 "<<first_i<<", "<<rankB((unsigned)fst-1);
-		cout<<"  rankS: "<<occS(current_char,(unsigned)first_i)<<endl;
+		//cout<<"current_char: "<<current_char<<", "<<"rankB: fst-1 "<<first_i<<", "<<rankB((unsigned)fst-1);
+		//cout<<"  rankS: "<<occS(current_char,(unsigned)first_i)<<endl;
 
-		cout<<"current_char: "<<current_char<<", "<<"rankB: lst "<<lst<<", "<<rankB((unsigned)lst);
-		cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
+		//cout<<"current_char: "<<current_char<<", "<<"rankB: lst "<<lst<<", "<<rankB((unsigned)lst);
+		//cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
 		//cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
 		//公式中的c[x] + 1 与 selectBB参数所需的-1 抵消.
 		first_p=cs_table[current_char_int]+1+occS(current_char,fst-1)-1;
 		last_p=cs_table[current_char_int]+1+occS(current_char,lst)-1;
 
-		cout<<"first pointer: "<<first_p <<endl;
-		cout<<"last pointer: "<<last_p <<endl;
+		//cout<<"first pointer: "<<first_p <<endl;
+		//cout<<"last pointer: "<<last_p <<endl;
 
 
 		if(getCharAtS(rankB(first_i)-1)==current_char){
-			cout<<"same fst"<<endl;
+			//cout<<"same fst"<<endl;
 			fst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,fst-1))+(fst-1)-selectB(rankB(fst-1));
 		}else{
-			cout<<first_p<<endl;
+			//cout<<first_p<<endl;
 			fst=selectBBForSearch(first_p);
 		}
 		if(getCharAtS(rankB(lst)-1)==current_char){
-			cout<<"same lst"<<endl;
+			//cout<<"same lst"<<endl;
 			lst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,lst))+lst-selectB(rankB(lst))-1;
 		}else{
-			cout<<selectBBForSearch(last_p)<<endl;
+			//cout<<selectBBForSearch(last_p)<<endl;
 			lst=selectBBForSearch(last_p)-1;
 		}
 		loc--;
@@ -618,13 +622,96 @@ unsigned int backwardSearch(string &target, unsigned int &f_result, unsigned int
 	//cout<<"loc: "<<loc<<", "<<"rankB "<<rankB((unsigned)fst)<<"rankS: "<<rankS(rankB((unsigned)fst),current_char)<<endl;
 	cout<<"fst: "<<fst<<"  lst"<<lst<<endl;
 	cout<<"result:"<<lst-fst+1<<endl;
-	f_result=fst;
-	l_result=lst;
+	f_result=(unsigned)fst;
+	l_result=(unsigned)lst;
 }
 
 unsigned int f_result=0,l_result=0;
 void searchForTimes(string target) {
 	backwardSearch(target,f_result,l_result);
+	if(l_result-f_result+1>0){
+		cout<<l_result-f_result+1<<endl;
+	}
+}
+
+//b->bb  L->F
+unsigned int backwordDecode(unsigned int target_num){
+	char c;
+	c=getCharAtS(rankB(target_num)-1);
+	//cout<<"c: "<<c<<" rankB(target_num): "<<rankB(target_num)<<" selectB(rankB(target_num)): "<<selectB(rankB(target_num)-1)-1<<endl;
+	//cout<<"cs_table: "<<cs_table[(int)c]<<" occS: "<<occS(c,target_num)<<" selectBB: "<<selectBBForSearch(cs_table[(int)c]+occS(c,target_num)-1)<<endl;
+
+	return selectBBForSearch(cs_table[(int)c]+occS(c,target_num)-1)+target_num-selectB(rankB(target_num)-1)-1;
+
+}
+
+void findAllUniqueMatch(unsigned f_result,unsigned l_result){
+	unsigned int current_p=0,next_p=0,line=0,status=0;
+	char char_of_pointer=0;
+	d=100;
+	for(line=f_result;line<=l_result;line++){
+		next_p=line;
+		string index_str;
+		string tmp;
+		status=0;
+		while(true){
+			current_p=next_p;
+			next_p=backwordDecode(current_p);
+			prevPosTable[next_p]=true;
+			if(prevPosTable.find(next_p)!=prevPosTable.end()){
+				//cout<<next_p<<endl;
+				//cout<<char_of_pointer<<endl;
+				//break;
+			}
+			char_of_pointer=getCharAtS(rankB(next_p)-1);
+			cout<<char_of_pointer<<endl;
+			if(status==0&&char_of_pointer=='['){
+				break;
+			}
+			if(status==0&&char_of_pointer==']'){
+				status=1;
+				index_str="";
+				tmp="";
+			}
+			if(status==1){
+				index_str+=char_of_pointer;
+				if(char_of_pointer=='['){
+					//cout<<index_str<<endl;
+					for(s=index_str.length();s>0;s--){
+						tmp+=index_str[s-1];
+					}
+					//cout<<tmp<<endl;
+					mappingTable[line]=tmp;
+					break;
+				}
+
+			}
+		}
+	}
+}
+
+void searchForR(string target){
+	backwardSearch(target,f_result,l_result);
+
+	for(i=1;i<=count_of_b;i++){
+		cout<<i<<","<<selectB(i-1)+1<<endl;
+	}
+
+	if(l_result-f_result+1<=0){
+		return;
+	}
+	findAllUniqueMatch(f_result,l_result);
+	cout<<mappingTable.size()<<endl;
+	/*
+	int a1,a2;
+	a1=3;
+	a2=5;
+	cout<<backwordDecode(a1)<<endl;
+	cout<<getCharAtS(rankB(backwordDecode(a1))-1)<<endl;
+	cout<<backwordDecode(a2)<<endl;
+	cout<<getCharAtS(rankB(backwordDecode(a2))-1)<<endl;
+	*/
+
 }
 
 
@@ -638,10 +725,16 @@ int main(int argc, char *argv[]) {
 	std::string target = argv[4];
 	init();
 	readSB(fileName);
+	if(target[0]=='"'&&target[target.length()-1]=='"'){
+		//cout<<"find \" "<<endl;
+		target=target.substr(1,target.length()-2);
+	}
 
 	//after read , Assume that all S B and BB is good.
 	if (mode == "-m") {
 		searchForTimes(target);
+	}else if(mode == "-r"){
+		searchForR(target);
 	}
 
 
