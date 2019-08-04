@@ -33,4 +33,12 @@ rlebwt
 rlfm.cpp
 files
 test/large.*
+rlebwt_for_test.cpp
+rlebwt_test
+index.*
+rt
+rt2
+r1
+r2
+r3
 

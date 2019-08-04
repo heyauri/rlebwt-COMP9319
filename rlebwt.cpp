@@ -163,11 +163,12 @@ unsigned int selectS(unsigned int target_num, unsigned int target_char_int) {
 	}
 }
 
-//rankS : target num should larger than 0;now calculate the char at target_num itself also.
+//rankS : target num should larger than 0;now it calculate the char at target_num itself.
 unsigned int lower_bound_section_rank_s = 0;
 unsigned int prev_sum_of_char = 0;
 
 unsigned int rankS(unsigned int target_num, char target_char) {
+	target_num-=1;
 	int target_char_int = (int) target_char;
 	if (target_num > count_of_s) {
 		return lens_table[target_char_int];
@@ -319,7 +320,7 @@ unsigned int selectBB(unsigned int target_num) {
 	if(prev_sum_select_bb>0){
 		prev_sum_select_bb--;
 	}
-	start_outer=(pos_select_b-current_b_buffer_section*SECTIONSIZE)/8;
+	start_outer=(pos_select_bb-current_bb_buffer_section*SECTIONSIZE)/8;
 	for(inner=0;inner<start_pos;inner++){
 		pos_select_bb--;
 		if(bb_buffer[start_outer] & (128 >> inner)){
@@ -433,6 +434,11 @@ void constructBBIndex(){
 
 }
 
+//convert 0 base pos to 1 base index.
+unsigned int selectBBForSearch(unsigned int target_num){
+	//cout<<"selectBBForSearch: "<<selectBB(target_num)+1<<endl;
+	return selectBB(target_num)+1;
+}
 
 void readSB(string &fileName) {
 	bbFN = fileName + ".bb";
@@ -460,8 +466,11 @@ void readSB(string &fileName) {
 	}
 	//c_table
 	unsigned int prev_chars_count = 0;
-	for (i = 0; i < CHARSCALE; i++) {
+	for (i = 1; i < CHARSCALE; i++) {
 		cs_table[i] = prev_chars_count;
+		if(lens_table[i]>0){
+			//cout<<(char)i<<prev_chars_count<<endl;
+		}
 		prev_chars_count += lens_table[i];
 	}
 	//rank_b select_b
@@ -497,11 +506,86 @@ void readSB(string &fileName) {
 	} else {
 		constructBBIndex();
 	}
+
+	for(i=0;i<count_bb_1;i++){
+		cout<<i+1<<"   "<<select_bb[i/SECTIONSIZE]<<"   "<<selectBBForSearch(i)<<endl;
+	}
+}
+
+//
+unsigned int occS(char c, unsigned int num){
+	return rankS(rankB(num)+1,c);
+}
+
+unsigned int lb=0;
+char getCharAtS(unsigned int target_num){
+	lb=target_num/SECTIONSIZE;
+	readSBySection(lb);
+	return s_buffer[target_num-(lb-current_s_buffer_section)*SECTIONSIZE];
 }
 
 
-void searchForTimes(string target) {
+unsigned int backwardSearch(string &target){
+	int length=(int)target.length();
+	int loc=length-1;
+	char current_char=target[loc];
+	int current_char_int=(int)current_char;
+	int fst=cs_table[current_char_int]+1;
+	int lst=cs_table[current_char_int]+lens_table[current_char_int];
+	int first_i=0,last_i=0;
+	int first_occ_s=0,last_occ_s=0;
+	//rank B : input is pos+1 (i*8+j +1)
+	cout<<"test"<<endl;
+	//cout<<rankB((unsigned)0)<<endl;
+	//cout<<rankB((unsigned)1)<<endl;
+	//cout<<rankB((unsigned)2)<<endl;
+	cout<<rankB((unsigned)11)<<endl;
+	cout<<rankS(5,'n')<<endl;
+	cout<<rankS(6,'n')<<endl;
+	cout<<selectBB(5)<<endl;
+	cout<<selectBBForSearch(7)<<endl;
+	//cout<<occS('a',3)<<endl;
+	//unsigned lst=selectBB(cs_table[current_char_int]+rankS(rankB(loc),current_char));
+	while((fst<=lst) && loc>=1){
+		cout<<"fst: "<<fst<<"  lst: "<<lst<<endl;
+		current_char=target[loc-1];
+		current_char_int=(int)current_char;
+		first_i=fst-1;
+		first_occ_s=occS(current_char,(unsigned)first_i);
+		last_occ_s=occS(current_char,(unsigned)lst);
+		cout<<"current_char: "<<current_char<<", "<<"rankB: fst-1 "<<first_i<<", "<<rankB((unsigned)fst-1);
+		cout<<"  rankS: "<<occS(current_char,(unsigned)first_i)<<endl;
 
+		cout<<"current_char: "<<current_char<<", "<<"rankB: lst "<<lst<<", "<<rankB((unsigned)lst);
+		cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
+		//cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
+		//公式中的c[x] + 1 与 selectBB参数所需的-1 抵消.
+		cout<<"first pointer: "<<cs_table[current_char_int]+1+occS(current_char,(unsigned)fst-1) <<endl;
+		cout<<"last pointer: "<<cs_table[current_char_int]+1+occS(current_char,(unsigned)lst) <<endl;
+
+
+		//if(first_occ_s==occS(current_char,(unsigned)first_i-1)){
+		if(getCharAtS(rankB(first_i))==current_char){
+			cout<<"same fst"<<endl;
+			fst=selectBBForSearch(cs_table[current_char_int]+first_occ_s)+(fst-1)-selectB(rankB(fst-1));
+		}else{
+			fst=selectBBForSearch(cs_table[current_char_int]+1+occS(current_char,fst-1)-1);
+		}
+		if(getCharAtS(rankB(lst))==current_char){
+			cout<<"same lst"<<endl;
+			lst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,lst))+lst-selectB(rankB(lst));
+		}else{
+			lst=selectBBForSearch(cs_table[current_char_int]+1+occS(current_char,lst))-1;
+		}
+		loc--;
+	}
+	//cout<<"loc: "<<loc<<", "<<"rankB "<<rankB((unsigned)fst)<<"rankS: "<<rankS(rankB((unsigned)fst),current_char)<<endl;
+	cout<<"fst: "<<fst<<"  lst"<<lst<<endl;
+	cout<<"result:"<<lst-fst+1<<endl;
+}
+
+void searchForTimes(string target) {
+	backwardSearch(target);
 }
 
 
