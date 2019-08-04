@@ -195,7 +195,8 @@ unsigned int lower_bound_section_rank_b = 0;
 unsigned int offset_section_rank_b=0;
 unsigned int rankB(unsigned int target_num) {
 	unsigned int prev_sum_rank_b = 0;
-	if (target_num > suffix_b1_start) {
+	//cout<<"suffix<<"<<suffix_b1_start<<endl;
+	if (target_num > suffix_b1_start &&suffix_b1_start>0) {
 		return count_of_b;
 	}
 	lower_bound_section_rank_b = target_num / SECTIONSIZE;
@@ -558,7 +559,7 @@ char getCharAtS(unsigned int target_num){
 }
 
 
-unsigned int backwardSearch(string &target){
+unsigned int backwardSearch(string &target, unsigned int &f_result, unsigned int &l_result){
 	int length=(int)target.length();
 	int loc=length-1;
 	char current_char=target[loc];
@@ -617,10 +618,13 @@ unsigned int backwardSearch(string &target){
 	//cout<<"loc: "<<loc<<", "<<"rankB "<<rankB((unsigned)fst)<<"rankS: "<<rankS(rankB((unsigned)fst),current_char)<<endl;
 	cout<<"fst: "<<fst<<"  lst"<<lst<<endl;
 	cout<<"result:"<<lst-fst+1<<endl;
+	f_result=fst;
+	l_result=lst;
 }
 
+unsigned int f_result=0,l_result=0;
 void searchForTimes(string target) {
-	backwardSearch(target);
+	backwardSearch(target,f_result,l_result);
 }
 
 
