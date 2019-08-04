@@ -40,8 +40,9 @@ unsigned int count_bb_1=0;
 vector<unsigned int> select_bb;
 
 //for search
-map<unsigned int,string> mappingTable;
+map<unsigned int,bool> mappingTable;
 map<unsigned int,bool> prevPosTable;
+vector<int> mappingIndex;
 
 FILE *sp, *bp, *bbp;
 unsigned int count_of_s = 0;
@@ -648,7 +649,6 @@ unsigned int backwordDecode(unsigned int target_num){
 void findAllUniqueMatch(unsigned f_result,unsigned l_result){
 	unsigned int current_p=0,next_p=0,line=0,status=0;
 	char char_of_pointer=0;
-	d=100;
 	for(line=f_result;line<=l_result;line++){
 		next_p=line;
 		string index_str;
@@ -657,14 +657,14 @@ void findAllUniqueMatch(unsigned f_result,unsigned l_result){
 		while(true){
 			current_p=next_p;
 			next_p=backwordDecode(current_p);
-			prevPosTable[next_p]=true;
 			if(prevPosTable.find(next_p)!=prevPosTable.end()){
 				//cout<<next_p<<endl;
 				//cout<<char_of_pointer<<endl;
-				//break;
+				break;
 			}
-			char_of_pointer=getCharAtS(rankB(next_p)-1);
-			cout<<char_of_pointer<<endl;
+			prevPosTable[next_p]=true;
+			char_of_pointer=getCharAtS(rankB(current_p)-1);
+			//cout<<char_of_pointer<<endl;
 			if(status==0&&char_of_pointer=='['){
 				break;
 			}
@@ -677,11 +677,12 @@ void findAllUniqueMatch(unsigned f_result,unsigned l_result){
 				index_str+=char_of_pointer;
 				if(char_of_pointer=='['){
 					//cout<<index_str<<endl;
-					for(s=index_str.length();s>0;s--){
+					for(s=index_str.length()-1;s>1;s--){
 						tmp+=index_str[s-1];
 					}
-					//cout<<tmp<<endl;
-					mappingTable[line]=tmp;
+					//cout<<stoi(tmp)<<endl;
+					//mappingTable[stoi(tmp)]=true;
+					mappingIndex.push_back(stoi(tmp));
 					break;
 				}
 
@@ -693,15 +694,17 @@ void findAllUniqueMatch(unsigned f_result,unsigned l_result){
 void searchForR(string target){
 	backwardSearch(target,f_result,l_result);
 
+	/*
 	for(i=1;i<=count_of_b;i++){
 		cout<<i<<","<<selectB(i-1)+1<<endl;
-	}
+	}*/
 
 	if(l_result-f_result+1<=0){
 		return;
 	}
 	findAllUniqueMatch(f_result,l_result);
-	cout<<mappingTable.size()<<endl;
+	//cout<<mappingTable.size()<<endl;
+	cout<<mappingIndex.size()<<endl;
 	/*
 	int a1,a2;
 	a1=3;
@@ -734,6 +737,8 @@ int main(int argc, char *argv[]) {
 	if (mode == "-m") {
 		searchForTimes(target);
 	}else if(mode == "-r"){
+		searchForR(target);
+	}else if(mode == "-a"){
 		searchForR(target);
 	}
 
