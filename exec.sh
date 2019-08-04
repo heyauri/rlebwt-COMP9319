@@ -2,9 +2,9 @@
 
 make -B
 
-fn="./test/simple1"
+fn="./test/simple2"
 
-rm -f "$fn.bb"
+#rm -f "$fn.bb"
 
 word=ana
 
@@ -14,11 +14,13 @@ then
 fi
 
 
-#time ./rlebwt -m $fn ./index ana
-./rlebwt -m $fn ./index "$word"
+time ./rlebwt -m $fn ./index "$word"
+#./rlebwt -m $fn ./index "$word"
 
 ./rlebwt_test -m "$fn" index "$word" >rt
 
+#cat "$fn.txt"
+grep -o "$word" "$fn.txt" |wc -w
 
 #time valgrind --tool=massif --pages-as-heap=yes  ./rlebwt  -m $fn  ./index  "in"
 

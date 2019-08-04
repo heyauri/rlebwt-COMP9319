@@ -174,10 +174,14 @@ unsigned int rankS(unsigned int target_num, char target_char) {
 		return lens_table[target_char_int];
 	}
 	lower_bound_section_rank_s = target_num / SECTIONSIZE;
-	prev_sum_of_char = select_s[lower_bound_section_rank_s];
+	prev_sum_of_char = select_s[lower_bound_section_rank_s*CHARSCALE+target_char_int];
+	//cout<<"lower_bound_section_rank_s : "<<lower_bound_section_rank_s<<endl;
+	//cout<<"prev_sum_of_char : "<<prev_sum_of_char<<endl;
 	readSBySection(lower_bound_section_rank_s);
-	for (e = lower_bound_section_rank_s - current_s_buffer_section;
-		 e <= target_num - lower_bound_section_rank_s * SECTIONSIZE; e++) {
+	//cout<<"start : "<<prev_sum_of_char<<endl;
+
+	for (e = (lower_bound_section_rank_s - current_s_buffer_section)*SECTIONSIZE;
+		 e <= target_num - current_s_buffer_section * SECTIONSIZE; e++) {
 		if (s_buffer[e] == target_char) {
 			prev_sum_of_char++;
 		}
@@ -188,7 +192,7 @@ unsigned int rankS(unsigned int target_num, char target_char) {
 
 //rankB
 unsigned int lower_bound_section_rank_b = 0;
-
+unsigned int offset_section_rank_b=0;
 unsigned int rankB(unsigned int target_num) {
 	unsigned int prev_sum_rank_b = 0;
 	if (target_num > suffix_b1_start) {
@@ -196,9 +200,18 @@ unsigned int rankB(unsigned int target_num) {
 	}
 	lower_bound_section_rank_b = target_num / SECTIONSIZE;
 	prev_sum_rank_b = rank_b[lower_bound_section_rank_b];
+
+	//cout<<endl<<"lower_bound_section_rank_b : "<<lower_bound_section_rank_b<<endl;
+	//cout<<"prev_sum_rank_b : "<<prev_sum_rank_b<<endl;
+
 	readBBySection(lower_bound_section_rank_b);
-	for (outer = (lower_bound_section_rank_b - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR;
-		 outer < (target_num / 8 - lower_bound_section_rank_b * BIT_SECTION_SIZE_OF_CHAR); outer++) {
+	offset_section_rank_b=lower_bound_section_rank_b-current_b_buffer_section;
+	//cout<<"offset_section_rank_b : "<<offset_section_rank_b<<endl;
+	//cout<<"upper : "<<(target_num/8 - offset_section_rank_b * BIT_SECTION_SIZE_OF_CHAR)<<endl;
+
+	for (outer = offset_section_rank_b * BIT_SECTION_SIZE_OF_CHAR;
+		 outer < (target_num/8 - current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR); outer++) {
+		//cout<<"outer: "<<outer<<endl;
 		for (inner = 0; inner < 8; inner++) {
 			if (b_buffer[outer] & (128 >> inner)) {
 				prev_sum_rank_b++;
@@ -246,7 +259,7 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
 		if ((baseline_bb / 8) >= current_bb_buffer_size + BB_BUFFER_SIZE * current_bb_buffer_section) {
-			cout << "reading" <<current_bb_buffer_section<< endl;
+			//cout << "reading" <<current_bb_buffer_section<< endl;
 			fseek(bbp, -BB_BUFFER_SIZE, 1);
 			fwrite(bb_buffer_for_generate, 1, current_bb_buffer_size, bbp);
 			current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
@@ -259,47 +272,57 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 	}
 }
 
-//selectB
-unsigned int prev_sum_select_b=0,pos_select_b=0,start_pos_b,start_outer=0;
-unsigned int lower_bound_section_select_b=0,offset_section_select_b=0;
+
+int gap_select_b = 0;
+unsigned int lower_bound_select_b = 0;
+unsigned int result_select_b = 0, prev_select_b = 0;
+unsigned int start_outer=0;
+
 unsigned int selectB(unsigned int target_num) {
-	target_num+=1;
-	if(target_num%SECTIONSIZE==0){
-		return select_b[target_num / SECTIONSIZE];
-	}
-	prev_sum_select_b=target_num-(target_num%SECTIONSIZE);
-	pos_select_b = select_b[target_num / SECTIONSIZE];
-	//result is a position.
-	lower_bound_section_select_b = pos_select_b / SECTIONSIZE;
-	//start pos 0-7
-	start_pos_b=pos_select_b%8;
-	readBBySection(lower_bound_section_select_b);
-	offset_section_select_b = lower_bound_section_select_b - current_b_buffer_section;
-	if(prev_sum_select_b>0){
-		prev_sum_select_b--;
-	}
-	start_outer=(pos_select_b-current_b_buffer_section*SECTIONSIZE)/8;
-	for(inner=0;inner<start_pos_b;inner++){
-		pos_select_b--;
-		if(b_buffer[start_outer] & (128 >> inner)){
-			prev_sum_select_b--;
+	target_num += 1;
+	for (w = 1; w <= rank_b_section_count; w++) {
+		if (target_num <= rank_b[w]) {
+			break;
 		}
 	}
-	for (outer = start_outer;
-		 outer < current_b_buffer_size; outer++) {
-		//cout<<"outer"<<outer<<",";
-		for(inner=0;inner<8;inner++){
-			if(b_buffer[outer] & (128 >> inner)){
-				prev_sum_select_b++;
-				if(prev_sum_select_b==target_num){
-					pos_select_b+=inner;
-					return pos_select_b;
+	lower_bound_select_b = w - 1;
+	result_select_b = rank_b[lower_bound_select_b];
+	prev_select_b = rank_b[lower_bound_select_b];
+	gap_select_b = lower_bound_select_b - current_b_buffer_section;
+	//in buffer
+	if (gap_select_b >= 0 && (gap_select_b < (8 * MAXSIZE / SECTIONSIZE))) {
+		for (outer = gap_select_b * BIT_SECTION_SIZE_OF_CHAR;
+			 outer <= (w - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR; outer++) {
+			//every char
+			for (inner = 0; inner < 8; inner++) {
+				//every bit in each char
+				if (b_buffer[outer] & (128 >> inner)) {
+					prev_select_b++;
+					if (prev_select_b == target_num) {
+						result_select_b = inner + 8 * (outer + current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR);
+						return result_select_b;
+					}
 				}
 			}
 		}
-		pos_select_b+=8;
+	} else {
+		//not in buffer
+		readBBySection(lower_bound_select_b);
+		for (outer = 0; outer < BIT_SECTION_SIZE_OF_CHAR; outer++) {
+			//every char
+			for (inner = 0; inner < 8; inner++) {
+				//every bit in each char
+				if (b_buffer[outer] & (128 >> inner)) {
+					prev_select_b++;
+					if (prev_select_b == target_num) {
+						result_select_b = inner + 8 * (outer + current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR);
+						return result_select_b;
+					}
+				}
+			}
+		}
 	}
-	return 999;
+	return 0;
 }
 //select bb
 unsigned int lower_bound_section_select_bb = 0;
@@ -355,7 +378,7 @@ void generateBB() {
 	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
 	current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
 	current_bb_buffer_section = 0;
-	cout<<"generate the bb file."<<endl;
+	//cout<<"generate the bb file."<<endl;
 	unsigned int zeros = 0;
 	unsigned int total_zeros = 0;
 	unsigned int baseline_bb = 0;
@@ -418,7 +441,7 @@ void constructBBIndex(){
 					bb_count++;
 					//select_bb : x: the section num of each section 1's y: the position.
 					if (bb_count % SECTIONSIZE == 0) {
-						select_bb.push_back(prev_bb_char_count+8*i+j+1);
+						select_bb.push_back(prev_bb_char_count+8*i+j);
 						select_bb_section_count++;
 					}
 				}
@@ -426,11 +449,11 @@ void constructBBIndex(){
 		}
 		prev_bb_char_count+=current_bb_buffer_size;
 	}
-	/*
-	for(i=1;i<=count_of_s;i++){
-		cout<<i<<", "<<select_bb[i/SECTIONSIZE]<<", "<<selectBB(i)<<endl;
+
+	for(i=0;i<=count_of_s;i++){
+		cout<<i+1<<", "<<select_bb[(i+1)/SECTIONSIZE]<<", "<<selectBB(i)+1<<endl;
 	}
-	*/
+
 
 }
 
@@ -506,22 +529,24 @@ void readSB(string &fileName) {
 	} else {
 		constructBBIndex();
 	}
-
-	for(i=0;i<count_bb_1;i++){
-		cout<<i+1<<"   "<<select_bb[i/SECTIONSIZE]<<"   "<<selectBBForSearch(i)<<endl;
-	}
+	/*
+	for(i=0;i<=count_bb_1;i++){
+		cout<<i<<"   "<<select_bb[i/SECTIONSIZE]<<"   "<<selectBBForSearch(i)<<endl;
+	}*/
 }
 
 //
 unsigned int occS(char c, unsigned int num){
-	return rankS(rankB(num)+1,c);
+	return rankS(rankB(num),c);
 }
 
 unsigned int lb=0;
 char getCharAtS(unsigned int target_num){
 	lb=target_num/SECTIONSIZE;
 	readSBySection(lb);
-	return s_buffer[target_num-(lb-current_s_buffer_section)*SECTIONSIZE];
+	//cout<<s_buffer<<endl;
+	//cout<<target_num-(current_s_buffer_section)*SECTIONSIZE<<endl;
+	return s_buffer[target_num-(current_s_buffer_section)*SECTIONSIZE];
 }
 
 
@@ -530,10 +555,10 @@ unsigned int backwardSearch(string &target){
 	int loc=length-1;
 	char current_char=target[loc];
 	int current_char_int=(int)current_char;
-	int fst=cs_table[current_char_int]+1;
-	int lst=cs_table[current_char_int]+lens_table[current_char_int];
+	int fst=selectBBForSearch(cs_table[current_char_int]);
+	int lst=selectBBForSearch(cs_table[current_char_int]+lens_table[current_char_int])-1;
 	int first_i=0,last_i=0;
-	int first_occ_s=0,last_occ_s=0;
+	int first_p=0,last_p=0;
 	//rank B : input is pos+1 (i*8+j +1)
 	cout<<"test"<<endl;
 	//cout<<rankB((unsigned)0)<<endl;
@@ -551,8 +576,6 @@ unsigned int backwardSearch(string &target){
 		current_char=target[loc-1];
 		current_char_int=(int)current_char;
 		first_i=fst-1;
-		first_occ_s=occS(current_char,(unsigned)first_i);
-		last_occ_s=occS(current_char,(unsigned)lst);
 		cout<<"current_char: "<<current_char<<", "<<"rankB: fst-1 "<<first_i<<", "<<rankB((unsigned)fst-1);
 		cout<<"  rankS: "<<occS(current_char,(unsigned)first_i)<<endl;
 
@@ -560,22 +583,26 @@ unsigned int backwardSearch(string &target){
 		cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
 		//cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
 		//公式中的c[x] + 1 与 selectBB参数所需的-1 抵消.
-		cout<<"first pointer: "<<cs_table[current_char_int]+1+occS(current_char,(unsigned)fst-1) <<endl;
-		cout<<"last pointer: "<<cs_table[current_char_int]+1+occS(current_char,(unsigned)lst) <<endl;
+		first_p=cs_table[current_char_int]+1+occS(current_char,fst-1)-1;
+		last_p=cs_table[current_char_int]+1+occS(current_char,lst)-1;
+
+		cout<<"first pointer: "<<first_p <<endl;
+		cout<<"last pointer: "<<last_p <<endl;
 
 
-		//if(first_occ_s==occS(current_char,(unsigned)first_i-1)){
-		if(getCharAtS(rankB(first_i))==current_char){
+		if(getCharAtS(rankB(first_i)-1)==current_char){
 			cout<<"same fst"<<endl;
-			fst=selectBBForSearch(cs_table[current_char_int]+first_occ_s)+(fst-1)-selectB(rankB(fst-1));
+			fst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,fst-1))+(fst-1)-selectB(rankB(fst-1));
 		}else{
-			fst=selectBBForSearch(cs_table[current_char_int]+1+occS(current_char,fst-1)-1);
+			cout<<first_p<<endl;
+			fst=selectBBForSearch(first_p);
 		}
-		if(getCharAtS(rankB(lst))==current_char){
+		if(getCharAtS(rankB(lst)-1)==current_char){
 			cout<<"same lst"<<endl;
-			lst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,lst))+lst-selectB(rankB(lst));
+			lst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,lst))+lst-selectB(rankB(lst))-1;
 		}else{
-			lst=selectBBForSearch(cs_table[current_char_int]+1+occS(current_char,lst))-1;
+			cout<<selectBBForSearch(last_p)<<endl;
+			lst=selectBBForSearch(last_p)-1;
 		}
 		loc--;
 	}
