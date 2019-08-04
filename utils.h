@@ -9,7 +9,7 @@ using namespace std;
 
 //MAXSIZE should larger than SECTIONSIZE
 
-#define MAXSIZE 16
+#define MAXSIZE 8
 #define BITMAX MAXSIZE*8
 #define CHARSCALE 128
 

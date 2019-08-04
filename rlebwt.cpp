@@ -430,28 +430,36 @@ void generateBB() {
 //if bb exists, get the select table;
 void constructBBIndex(){
 	cout<<"construct index"<<endl;
+	fclose(bbp);
+	bbp=fopen(bbFN.c_str(),"r+");
 	rewind(bbp);
 	unsigned int bb_count=0;
 	unsigned int prev_bb_char_count=0;
 	while (!feof(bbp)) {
 		current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, MAXSIZE, bbp);
-		for (i = 0; i < current_b_buffer_size; i++) {
+		//cout<<current_bb_buffer_size<<endl;
+		//cout<<i<<endl;
+		for (i = 0; i < current_bb_buffer_size; i++) {
+			//cout<<bb_count<<endl;
 			for (j = 0; j < 8; j++) {
 				if (bb_buffer[i] & (128 >> j)) {
 					bb_count++;
 					//select_bb : x: the section num of each section 1's y: the position.
 					if (bb_count % SECTIONSIZE == 0) {
-						select_bb.push_back(prev_bb_char_count+8*i+j);
+						//cout<<(prev_bb_char_count+i)*8+j<<endl;
+						select_bb.push_back((prev_bb_char_count+i)*8+j);
 						select_bb_section_count++;
 					}
 				}
 			}
 		}
+		//cout<<bb_count<<endl;
 		prev_bb_char_count+=current_bb_buffer_size;
+		current_bb_buffer_section=prev_bb_char_count/(BIT_SECTION_SIZE_OF_CHAR);
 	}
 
 	for(i=0;i<=count_of_s;i++){
-		cout<<i+1<<", "<<select_bb[(i+1)/SECTIONSIZE]<<", "<<selectBB(i)+1<<endl;
+		//cout<<i+1<<", "<<select_bb[(i+1)/SECTIONSIZE]<<", "<<selectBB(i)+1<<endl;
 	}
 
 
@@ -565,8 +573,8 @@ unsigned int backwardSearch(string &target){
 	//cout<<rankB((unsigned)1)<<endl;
 	//cout<<rankB((unsigned)2)<<endl;
 	cout<<rankB((unsigned)11)<<endl;
-	cout<<rankS(5,'n')<<endl;
-	cout<<rankS(6,'n')<<endl;
+	cout<<rankS(212,'n')<<endl;
+	cout<<rankS(211,'n')<<endl;
 	cout<<selectBB(5)<<endl;
 	cout<<selectBBForSearch(7)<<endl;
 	//cout<<occS('a',3)<<endl;
