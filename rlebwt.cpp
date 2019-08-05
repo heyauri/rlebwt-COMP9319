@@ -16,10 +16,10 @@ unsigned int outer = 0, inner = 0;
 
 //buffers
 std::string bbFN, bFN, sFN;
-char *s_buffer=new char[MAXSIZE];
-char *b_buffer=new char[MAXSIZE];
-char *bb_buffer=new char[MAXSIZE];
-char *bb_buffer_for_generate=NULL;
+char *s_buffer = new char[MAXSIZE];
+char *b_buffer = new char[MAXSIZE];
+char *bb_buffer = new char[MAXSIZE];
+char *bb_buffer_for_generate = NULL;
 
 //for s
 unsigned int cs_table[CHARSCALE], lens_table[CHARSCALE];
@@ -34,20 +34,20 @@ unsigned int count_of_b = 0, suffix_b1_start;
 unsigned int current_b_buffer_size = 0, current_b_buffer_section = 0;
 
 //for bb
-unsigned int current_bb_buffer_size = 0, current_bb_buffer_section = 0,select_bb_section_count=0;
-unsigned int count_bb_1=0;
+unsigned int current_bb_buffer_size = 0, current_bb_buffer_section = 0, select_bb_section_count = 0;
+unsigned int count_bb_1 = 0;
 vector<unsigned int> select_bb;
 
 //for search
-map<unsigned int,bool> prevPosTable;
+map<unsigned int, bool> prevPosTable;
 vector<int> mappingIndex;
 
 FILE *sp, *bp, *bbp;
 unsigned int count_of_s = 0;
 
-bool isNum(string str){
-	for(d=0;d<str.length();d++){
-		if(!isdigit(str[d])){
+bool isNum(string str) {
+	for (d = 0; d < str.length(); d++) {
+		if (!isdigit(str[d])) {
 			return false;
 		}
 	}
@@ -181,16 +181,19 @@ unsigned int lower_bound_section_rank_s = 0;
 unsigned int prev_sum_of_char = 0;
 
 unsigned int rankS(unsigned int target_num, char target_char) {
-	target_num-=1;
+	if (target_num < 1) {
+		return 0;
+	}
+	target_num -= 1;
 	int target_char_int = (int) target_char;
 	if (target_num > count_of_s) {
 		return lens_table[target_char_int];
 	}
 	lower_bound_section_rank_s = target_num / SECTIONSIZE;
-	prev_sum_of_char = select_s[lower_bound_section_rank_s*CHARSCALE+target_char_int];
+	prev_sum_of_char = select_s[lower_bound_section_rank_s * CHARSCALE + target_char_int];
 	readSBySection(lower_bound_section_rank_s);
 
-	for (e = (lower_bound_section_rank_s - current_s_buffer_section)*SECTIONSIZE;
+	for (e = (lower_bound_section_rank_s - current_s_buffer_section) * SECTIONSIZE;
 		 e <= target_num - current_s_buffer_section * SECTIONSIZE; e++) {
 		if (s_buffer[e] == target_char) {
 			prev_sum_of_char++;
@@ -202,11 +205,12 @@ unsigned int rankS(unsigned int target_num, char target_char) {
 
 //rankB
 unsigned int lower_bound_section_rank_b = 0;
-unsigned int offset_section_rank_b=0;
+unsigned int offset_section_rank_b = 0;
+
 unsigned int rankB(unsigned int target_num) {
 	unsigned int prev_sum_rank_b = 0;
 	//cout<<"suffix<<"<<suffix_b1_start<<endl;
-	if (target_num > suffix_b1_start &&suffix_b1_start>0) {
+	if (target_num > suffix_b1_start && suffix_b1_start > 0) {
 		return count_of_b;
 	}
 	lower_bound_section_rank_b = target_num / SECTIONSIZE;
@@ -216,12 +220,12 @@ unsigned int rankB(unsigned int target_num) {
 	//cout<<"prev_sum_rank_b : "<<prev_sum_rank_b<<endl;
 
 	readBBySection(lower_bound_section_rank_b);
-	offset_section_rank_b=lower_bound_section_rank_b-current_b_buffer_section;
+	offset_section_rank_b = lower_bound_section_rank_b - current_b_buffer_section;
 	//cout<<"offset_section_rank_b : "<<offset_section_rank_b<<endl;
 	//cout<<"upper : "<<(target_num/8 - offset_section_rank_b * BIT_SECTION_SIZE_OF_CHAR)<<endl;
 
 	for (outer = offset_section_rank_b * BIT_SECTION_SIZE_OF_CHAR;
-		 outer < (target_num/8 - current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR); outer++) {
+		 outer < (target_num / 8 - current_b_buffer_section * BIT_SECTION_SIZE_OF_CHAR); outer++) {
 		//cout<<"outer: "<<outer<<endl;
 		for (inner = 0; inner < 8; inner++) {
 			if (b_buffer[outer] & (128 >> inner)) {
@@ -287,7 +291,7 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 int gap_select_b = 0;
 unsigned int lower_bound_select_b = 0;
 unsigned int result_select_b = 0, prev_select_b = 0;
-unsigned int start_outer=0;
+unsigned int start_outer = 0;
 
 unsigned int selectB(unsigned int target_num) {
 	target_num += 1;
@@ -335,52 +339,57 @@ unsigned int selectB(unsigned int target_num) {
 	}
 	return 0;
 }
+
 //select bb
 unsigned int lower_bound_section_select_bb = 0;
-unsigned int pos_select_bb = 0,prev_sum_select_bb=0;
-unsigned int offset_section_select_bb = 0,start_pos=0;
+unsigned int pos_select_bb = 0, prev_sum_select_bb = 0;
+unsigned int offset_section_select_bb = 0, start_pos = 0;
+
 unsigned int selectBB(unsigned int target_num) {
-	target_num+=1;
-	if(target_num%SECTIONSIZE==0){
+	target_num += 1;
+	if (target_num % SECTIONSIZE == 0) {
 		return select_bb[target_num / SECTIONSIZE];
 	}
-	prev_sum_select_bb=target_num-(target_num%SECTIONSIZE);
+	prev_sum_select_bb = target_num - (target_num % SECTIONSIZE);
 	pos_select_bb = select_bb[target_num / SECTIONSIZE];
 	//result is a position.
 	lower_bound_section_select_bb = pos_select_bb / SECTIONSIZE;
-	start_pos=pos_select_bb%8;
+	start_pos = pos_select_bb % 8;
 	readBBBySection(lower_bound_section_select_bb);
 	offset_section_select_bb = lower_bound_section_select_bb - current_bb_buffer_section;
-	if(prev_sum_select_bb>0){
+	if (prev_sum_select_bb > 0) {
 		prev_sum_select_bb--;
 	}
 
-	start_outer=(pos_select_bb-current_bb_buffer_section*SECTIONSIZE)/8;
-	for(inner=0;inner<start_pos;inner++){
+	start_outer = (pos_select_bb - current_bb_buffer_section * SECTIONSIZE) / 8;
+	for (inner = 0; inner < start_pos; inner++) {
 		pos_select_bb--;
-		if(bb_buffer[start_outer] & (128 >> inner)){
+		if (bb_buffer[start_outer] & (128 >> inner)) {
 			prev_sum_select_bb--;
 		}
 	}
-	while(!feof(bbp)){
+	while (true) {
 		for (outer = start_outer;
 			 outer < current_bb_buffer_size; outer++) {
 			//cout<<"outer:"<<outer<<", ";
-			for(inner=0;inner<8;inner++){
-				if(bb_buffer[outer] & (128 >> inner)){
+			for (inner = 0; inner < 8; inner++) {
+				if (bb_buffer[outer] & (128 >> inner)) {
 					prev_sum_select_bb++;
-					if(prev_sum_select_bb==target_num){
+					if (prev_sum_select_bb == target_num) {
 						//cout<<"inner:"<<inner<<", ";
-						pos_select_bb+=inner;
+						pos_select_bb += inner;
 						return pos_select_bb;
 					}
 				}
 			}
-			pos_select_bb+=8;
+			pos_select_bb += 8;
 		}
-		lower_bound_section_select_bb+=(MAXSIZE/SECTIONSIZE);
+		lower_bound_section_select_bb += (MAXSIZE / SECTIONSIZE);
 		readBBBySection(lower_bound_section_select_bb);
-		start_outer=0;
+		start_outer = 0;
+		if (feof(bbp)) {
+			break;
+		}
 	}
 	return pos_select_bb;
 }
@@ -391,7 +400,7 @@ void generateBB() {
 	rewind(sp);
 	rewind(bp);
 	rewind(bbp);
-	bb_buffer_for_generate=new char[BB_BUFFER_SIZE];
+	bb_buffer_for_generate = new char[BB_BUFFER_SIZE];
 	current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
 	current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
@@ -421,22 +430,22 @@ void generateBB() {
 				writeZerosIntoBB(baseline_bb, zeros);
 			}
 			//select_bb : x: the section num of each section 1's y: the position.
-			if ((baseline_bb+1  - total_zeros) % SECTIONSIZE == 0) {
+			if ((baseline_bb + 1 - total_zeros) % SECTIONSIZE == 0) {
 				select_bb.push_back(baseline_bb);
 				select_bb_section_count++;
 			}
 			j++;
 		}
 	}
-	count_bb_1=baseline_bb-total_zeros;
+	count_bb_1 = baseline_bb - total_zeros;
 	//final write
 	fseek(bbp, current_bb_buffer_section * BB_BUFFER_SIZE, 0);
 	fwrite(bb_buffer_for_generate, 1, current_bb_buffer_size, bbp);
 	rewind(bbp);
-	delete []bb_buffer_for_generate;
-	bb_buffer_for_generate=new char[MAXSIZE];
-	current_bb_buffer_size=(unsigned int)fread(bb_buffer,1,MAXSIZE,bbp);
-	current_bb_buffer_section=0;
+	delete[]bb_buffer_for_generate;
+	bb_buffer_for_generate = new char[MAXSIZE];
+	current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, MAXSIZE, bbp);
+	current_bb_buffer_section = 0;
 
 	/*
 	for(i=1;i<=baseline_bb-total_zeros;i++){
@@ -448,13 +457,13 @@ void generateBB() {
 }
 
 //if bb exists, get the select table;
-void constructBBIndex(){
+void constructBBIndex() {
 	//cout<<"construct index"<<endl;
 	fclose(bbp);
-	bbp=fopen(bbFN.c_str(),"r+");
+	bbp = fopen(bbFN.c_str(), "r+");
 	rewind(bbp);
-	unsigned int bb_count=0;
-	unsigned int prev_bb_char_count=0;
+	unsigned int bb_count = 0;
+	unsigned int prev_bb_char_count = 0;
 	while (!feof(bbp)) {
 		current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, MAXSIZE, bbp);
 		//cout<<current_bb_buffer_size<<endl;
@@ -467,30 +476,30 @@ void constructBBIndex(){
 					//select_bb : x: the section num of each section 1's y: the position.
 					if (bb_count % SECTIONSIZE == 0) {
 						//cout<<(prev_bb_char_count+i)*8+j<<endl;
-						select_bb.push_back((prev_bb_char_count+i)*8+j);
+						select_bb.push_back((prev_bb_char_count + i) * 8 + j);
 						select_bb_section_count++;
 					}
 				}
 			}
 		}
 		//cout<<bb_count<<endl;
-		prev_bb_char_count+=current_bb_buffer_size;
-		current_bb_buffer_section=prev_bb_char_count/(BIT_SECTION_SIZE_OF_CHAR);
+		prev_bb_char_count += current_bb_buffer_size;
+		current_bb_buffer_section = prev_bb_char_count / (BIT_SECTION_SIZE_OF_CHAR);
 	}
 
 	//cout<<bb_count<<endl;
-/*
-	for(i=0;i<=count_of_s;i++){
+
+	for (i = 0; i <= count_of_s; i++) {
 		//cout<<i+1<<", "<<select_bb[(i+1)/SECTIONSIZE]<<", "<<selectBB(i)+1<<endl;
 	}
-*/
+
 
 }
 
 //convert 0 base pos to 1 base index.
-unsigned int selectBBForSearch(unsigned int target_num){
+unsigned int selectBBForSearch(unsigned int target_num) {
 	//cout<<"selectBBForSearch: "<<selectBB(target_num)+1<<endl;
-	return selectBB(target_num)+1;
+	return selectBB(target_num) + 1;
 }
 
 void readSB(string &fileName) {
@@ -521,7 +530,7 @@ void readSB(string &fileName) {
 	unsigned int prev_chars_count = 0;
 	for (i = 1; i < CHARSCALE; i++) {
 		cs_table[i] = prev_chars_count;
-		if(lens_table[i]>0){
+		if (lens_table[i] > 0) {
 			//cout<<(char)i<<prev_chars_count<<endl;
 		}
 		prev_chars_count += lens_table[i];
@@ -537,7 +546,7 @@ void readSB(string &fileName) {
 					b_count++;
 					if ((b_count) % SECTIONSIZE == 0) {
 						//cout<<char_b_count*8+8*i+j<<endl;
-						select_b.push_back((char_b_count+i)*8+j);
+						select_b.push_back((char_b_count + i) * 8 + j);
 						select_b_section_count++;
 					}
 					if (b_count == count_of_s + 1) {
@@ -566,29 +575,30 @@ void readSB(string &fileName) {
 }
 
 //
-unsigned int occS(char c, unsigned int num){
-	return rankS(rankB(num),c);
+unsigned int occS(char c, unsigned int num) {
+	return rankS(rankB(num), c);
 }
 
-unsigned int lb=0;
-char getCharAtS(unsigned int target_num){
-	lb=target_num/SECTIONSIZE;
+unsigned int lb = 0;
+
+char getCharAtS(unsigned int target_num) {
+	lb = target_num / SECTIONSIZE;
 	readSBySection(lb);
 	//cout<<s_buffer<<endl;
 	//cout<<target_num-(current_s_buffer_section)*SECTIONSIZE<<endl;
-	return s_buffer[target_num-(current_s_buffer_section)*SECTIONSIZE];
+	return s_buffer[target_num - (current_s_buffer_section) * SECTIONSIZE];
 }
 
 
-void backwardSearch(string &target,  int &f_result,  int &l_result){
-	int length=(int)target.length();
-	int loc=length-1;
-	char current_char=target[loc];
-	int current_char_int=(int)current_char;
-	int fst=selectBBForSearch(cs_table[current_char_int]);
-	int lst=selectBBForSearch(cs_table[current_char_int]+lens_table[current_char_int])-1;
-	int first_i=0;
-	int first_p=0,last_p=0;
+void backwardSearch(string &target, int &f_result, int &l_result) {
+	int length = (int) target.length();
+	int loc = length - 1;
+	char current_char = target[loc];
+	int current_char_int = (int) current_char;
+	int fst = selectBBForSearch(cs_table[current_char_int]);
+	int lst = selectBBForSearch(cs_table[current_char_int] + lens_table[current_char_int]) - 1;
+	int first_i = 0;
+	int first_p = 0, last_p = 0;
 	//rank B : input is pos+1 (i*8+j +1)
 	//cout<<"test"<<endl;
 	//cout<<rankB((unsigned)0)<<endl;
@@ -596,105 +606,112 @@ void backwardSearch(string &target,  int &f_result,  int &l_result){
 	//cout<<rankB((unsigned)2)<<endl;
 	//cout<<rankB((unsigned)11)<<endl;
 	//cout<<rankS(212,'n')<<endl;
-	//cout<<rankS(211,'n')<<endl;
-	//cout<<selectBB(5)<<endl;
-	//cout<<selectBBForSearch(51925525)<<endl;
+	//cout<<rankS(1,'[')<<endl;
+	//cout<<target<<endl;
+	//cout<<target[loc]<<endl;
+	//cout<<cs_table[current_char_int]+lens_table[current_char_int]<<endl;
+	//cout<<lst<<endl;
 	//cout<<selectBBForSearch(51925525)<<endl;
 	//cout<<occS('a',3)<<endl;
 	//unsigned lst=selectBB(cs_table[current_char_int]+rankS(rankB(loc),current_char));
-	while((fst<=lst) && loc>=1){
-		cout<<"fst: "<<fst<<"  lst: "<<lst<<endl;
-		current_char=target[loc-1];
-		current_char_int=(int)current_char;
-		first_i=fst-1;
-		cout<<"current_char: "<<current_char<<", "<<"rankB: fst-1 "<<first_i<<", "<<rankB((unsigned)fst-1);
+	while ((fst <= lst) && loc >= 1) {
+		//cout<<"fst: "<<fst<<"  lst: "<<lst<<endl;
+		current_char = target[loc - 1];
+		current_char_int = (int) current_char;
+		first_i = fst - 1;
+		//公式中的c[x] + 1 与 selectBB参数所需的-1 抵消.
+		first_p = cs_table[current_char_int] + 1 + occS(current_char, fst - 1) - 1;
+		last_p = cs_table[current_char_int] + 1 + occS(current_char, lst) - 1;
+		/*
+		cout<<"current_char: "<<current_char<<", "<<"rankB: fst-1 "<<first_i<<", "<<rankB((unsigned)first_i);
 		cout<<"  rankS: "<<occS(current_char,(unsigned)first_i)<<endl;
-
 		cout<<"current_char: "<<current_char<<", "<<"rankB: lst "<<lst<<", "<<rankB((unsigned)lst);
 		cout<<"  rankS: "<<occS(current_char,(unsigned)lst)<<endl;
-		//公式中的c[x] + 1 与 selectBB参数所需的-1 抵消.
-		first_p=cs_table[current_char_int]+1+occS(current_char,fst-1)-1;
-		last_p=cs_table[current_char_int]+1+occS(current_char,lst)-1;
-
 		cout<<"first pointer: "<<first_p <<endl;
 		cout<<"last pointer: "<<last_p <<endl;
+		*/
 
 
-		if(getCharAtS(rankB(first_i)-1)==current_char){
+
+		if (getCharAtS(rankB(first_i) - 1) == current_char) {
 			//cout<<"same fst"<<endl;
-			fst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,fst-1))+(fst-1)-selectB(rankB(fst-1));
-		}else{
+			fst = selectBBForSearch(cs_table[current_char_int] + occS(current_char, first_i)) + (first_i) -
+				  selectB(rankB(first_i));
+		} else {
 			//cout<<first_p<<endl;
-			fst=selectBBForSearch(first_p);
+			fst = selectBBForSearch(first_p);
 		}
-		if(getCharAtS(rankB(lst)-1)==current_char){
+		if (getCharAtS(rankB(lst) - 1) == current_char) {
 			//cout<<"same lst"<<endl;
-			lst=selectBBForSearch(cs_table[current_char_int]+occS(current_char,lst))+lst-selectB(rankB(lst))-1;
-		}else{
+			lst = selectBBForSearch(cs_table[current_char_int] + occS(current_char, lst)) + lst - selectB(rankB(lst)) -
+				  1;
+		} else {
 			//cout<<selectBBForSearch(last_p)<<endl;
-			lst=selectBBForSearch(last_p)-1;
+			lst = selectBBForSearch(last_p) - 1;
 		}
 		loc--;
 	}
-	cout<<"fst: "<<fst<<"  lst"<<lst<<endl;
-	cout<<"result:"<<lst-fst+1<<endl;
-	f_result=(unsigned)fst;
-	l_result=(unsigned)lst;
+	//cout<<"fst: "<<fst<<"  lst"<<lst<<endl;
+	//cout<<"result:"<<lst-fst+1<<endl;
+	f_result = (unsigned) fst;
+	l_result = (unsigned) lst;
 }
 
-int f_result=0,l_result=0;
+int f_result = 0, l_result = 0;
+
 void searchForTimes(string target) {
-	backwardSearch(target,f_result,l_result);
-	if(l_result-f_result+1>0){
-		cout<<l_result-f_result+1<<endl;
+	backwardSearch(target, f_result, l_result);
+	if (l_result - f_result + 1 > 0) {
+		cout << l_result - f_result + 1 << endl;
 	}
 }
 
 //b->bb  L->F
-unsigned int backwordDecode(unsigned int target_num){
+unsigned int backwordDecode(unsigned int target_num) {
 	char c;
-	unsigned int rank_b_val=rankB(target_num);
-	c=getCharAtS(rank_b_val-1);
+	unsigned int rank_b_val = rankB(target_num);
+	c = getCharAtS(rank_b_val - 1);
 	//cout<<"c: "<<c<<" rankB(target_num): "<<rankB(target_num)<<" selectB(rankB(target_num)): "<<selectB(rankB(target_num)-1)-1<<endl;
 	//cout<<"cs_table: "<<cs_table[(int)c]<<" occS: "<<occS(c,target_num)<<" selectBB: "<<selectBBForSearch(cs_table[(int)c]+occS(c,target_num)-1)<<endl;
 
-	return selectBBForSearch(cs_table[(int)c]+occS(c,target_num)-1)+target_num-selectB(rank_b_val-1)-1;
+	return selectBBForSearch(cs_table[(int) c] + occS(c, target_num) - 1) + target_num - selectB(rank_b_val - 1) - 1;
 
 }
 
-void findAllUniqueMatch(unsigned f_result,unsigned l_result){
-	unsigned int current_p=0,next_p=0,line=0,status=0;
-	char char_of_pointer=0;
-	for(line=f_result;line<=l_result;line++){
-		next_p=line;
+void findAllUniqueMatch(unsigned f_result, unsigned l_result) {
+	unsigned int current_p = 0, next_p = 0, line = 0, status = 0;
+	char char_of_pointer = 0;
+	for (line = f_result; line <= l_result; line++) {
+		next_p = line;
 		string index_str;
 		string tmp;
-		status=0;
-		prevPosTable[next_p]=true;
-		while(true){
-			current_p=next_p;
-			next_p=backwordDecode(current_p);
-			if(prevPosTable.find(next_p)!=prevPosTable.end()){
+		status = 0;
+		prevPosTable[next_p] = true;
+		while (true) {
+			current_p = next_p;
+			next_p = backwordDecode(current_p);
+			if (prevPosTable.find(next_p) != prevPosTable.end()) {
 				//cout<<next_p<<endl;
 				//cout<<char_of_pointer<<endl;
 				break;
 			}
-			char_of_pointer=getCharAtS(rankB(current_p)-1);
+			char_of_pointer = getCharAtS(rankB(current_p) - 1);
 			//cout<<char_of_pointer<<endl;
-			if(status==0&&char_of_pointer=='['){
+			if (status == 0 && char_of_pointer == '[') {
 				break;
 			}
-			if(status==0&&char_of_pointer==']'){
-				status=1;
-				index_str="";
-				tmp="";
+			if (status == 0 && char_of_pointer == ']') {
+				status = 1;
+				index_str = "";
+				tmp = "";
+				prevPosTable[current_p] = true;
 			}
-			if(status==1){
-				index_str+=char_of_pointer;
-				if(char_of_pointer=='['){
+			if (status == 1) {
+				index_str += char_of_pointer;
+				if (char_of_pointer == '[') {
 					//cout<<index_str<<endl;
-					for(s=index_str.length()-1;s>1;s--){
-						tmp+=index_str[s-1];
+					for (s = index_str.length() - 1; s > 1; s--) {
+						tmp += index_str[s - 1];
 					}
 					//cout<<stoi(tmp)<<endl;
 					//mappingTable[stoi(tmp)]=true;
@@ -707,39 +724,71 @@ void findAllUniqueMatch(unsigned f_result,unsigned l_result){
 	}
 }
 
-void searchForR(string target){
-	backwardSearch(target,f_result,l_result);
+void searchForR(string target) {
+	backwardSearch(target, f_result, l_result);
 
-	if(l_result-f_result+1<=0){
+	if (l_result - f_result + 1 <= 0) {
 		return;
 	}
-	findAllUniqueMatch(f_result,l_result);
-	cout<<mappingIndex.size()<<endl;
-}
-void searchForA(string target){
-	backwardSearch(target,f_result,l_result);
-
-	if(l_result-f_result+1<=0){
-		return;
-	}
-	findAllUniqueMatch(f_result,l_result);
-	sort(mappingIndex.begin(),mappingIndex.end());
-	for(i=0;i<mappingIndex.size();i++){
-		cout<<"["<<mappingIndex[i]<<"]"<<endl;
-	}
+	findAllUniqueMatch(f_result, l_result);
+	cout << mappingIndex.size() << endl;
 }
 
-void searchForN(string target){
-	backwardSearch(target,f_result,l_result);
+void searchForA(string target) {
+	backwardSearch(target, f_result, l_result);
 
-	if(l_result-f_result+1<=0){
+	if (l_result - f_result + 1 <= 0) {
 		return;
 	}
-	findAllUniqueMatch(f_result,l_result);
-	sort(mappingIndex.begin(),mappingIndex.end());
-	for(i=0;i<mappingIndex.size();i++){
-		cout<<"["<<mappingIndex[i]<<"]"<<endl;
+	findAllUniqueMatch(f_result, l_result);
+	sort(mappingIndex.begin(), mappingIndex.end());
+	for (i = 0; i < mappingIndex.size(); i++) {
+		cout << "[" << mappingIndex[i] << "]" << endl;
 	}
+}
+
+void printPreviousContent(unsigned int start_p) {
+	unsigned int current_p = 0, next_p = 0;
+	char char_of_pointer = 0;
+	next_p = start_p;
+	string index_str;
+	string tmp;
+	index_str = "";
+	tmp = "";
+	while (true) {
+		current_p = next_p;
+		next_p = backwordDecode(current_p);
+		char_of_pointer = getCharAtS(rankB(current_p) - 1);
+		if (char_of_pointer == ']') {
+			for (s = index_str.length(); s > 0; s--) {
+				tmp += index_str[s - 1];
+			}
+			cout<<tmp<<endl;
+			break;
+		}else{
+			index_str+=char_of_pointer;
+		}
+	}
+}
+
+void searchForN(string target) {
+	int target_num = stoi(target) + 1;
+	string str = "";
+	while (true) {
+		str = "[" + to_string(target_num) + "]";
+		//cout<<str<<endl;
+		backwardSearch(str, f_result, l_result);
+		if (l_result - f_result + 1 > 0) {
+			printPreviousContent(f_result);
+			break;
+		}
+		target_num++;
+		if (target_num > count_of_s) {
+			break;
+		}
+	}
+
+	//cout<<target_num<<endl;
 }
 
 
@@ -753,19 +802,19 @@ int main(int argc, char *argv[]) {
 	std::string target = argv[4];
 	init();
 	readSB(fileName);
-	if(target[0]=='"'&&target[target.length()-1]=='"'){
+	if (target[0] == '"' && target[target.length() - 1] == '"') {
 		//cout<<"find \" "<<endl;
-		target=target.substr(1,target.length()-2);
+		target = target.substr(1, target.length() - 2);
 	}
 
 	//after read , Assume that all S B and BB is good.
 	if (mode == "-m") {
 		searchForTimes(target);
-	}else if(mode == "-r"){
+	} else if (mode == "-r") {
 		searchForR(target);
-	}else if(mode == "-a"){
+	} else if (mode == "-a") {
 		searchForA(target);
-	}else if(mode == "-n"){
+	} else if (mode == "-n") {
 		searchForN(target);
 	}
 

@@ -2,7 +2,7 @@
 
 make -B
 
-fn="./test/dblp"
+fn="./test/large"
 
 #rm -f "$fn.bb"
 
@@ -14,7 +14,7 @@ then
 fi
 
 
-time ./rlebwt -r $fn ./index "\"$word\""
+time ./rlebwt -a $fn ./index "\"$word\""
 #./rlebwt -m $fn ./index "$word"
 
 time ./rlebwt_test -m "$fn" index "$word" >rt
