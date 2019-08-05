@@ -2,9 +2,9 @@
 
 make -B
 
-fn="./test/dblp"
+fn="./test/large"
 
-rm -f "$fn.bb"
+#rm -f "$fn.bb"
 
 word=ana
 

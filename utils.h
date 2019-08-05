@@ -13,6 +13,8 @@ using namespace std;
 #define BITMAX MAXSIZE*8
 #define CHARSCALE 128
 
+#define CHAR_SECTION_SIZE 40960
+
 //section size should >= 8
 #define SECTION_SIZE 1024
 

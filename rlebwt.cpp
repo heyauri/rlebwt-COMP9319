@@ -17,6 +17,7 @@ unsigned int outer = 0, inner = 0;
 
 unsigned int MAXSIZE=MAX_SIZE;
 unsigned int SECTIONSIZE=SECTION_SIZE;
+unsigned int CHARSECTIONSIZE=SECTION_SIZE;
 unsigned int BIT_SECTION_SIZE_OF_CHAR=SECTIONSIZE/8;
 
 //buffers
@@ -111,9 +112,9 @@ void initBB() {
 
 void readSBySection(unsigned int &target_section) {
 	//target section not in current buffer.
-	if ((target_section - current_s_buffer_section) * SECTIONSIZE / MAXSIZE > 0 ||
+	if ((target_section - current_s_buffer_section) * CHARSECTIONSIZE / MAXSIZE > 0 ||
 		current_s_buffer_section > target_section) {
-		fseek(sp, target_section * SECTIONSIZE, 0);
+		fseek(sp, target_section * CHARSECTIONSIZE, 0);
 		current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 		current_s_buffer_section = target_section;
 	}
@@ -173,19 +174,19 @@ unsigned int selectS(unsigned int target_num, unsigned int target_char_int) {
 	//while k=0,all rank_s[char] is 0,hence k start at 1.
 	lower_bound_select_s = k - 1;
 	// now k is the section that occ[x] > target;
-	result_select_s = (unsigned int) SECTIONSIZE * lower_bound_select_s;
+	result_select_s = (unsigned int) CHARSECTIONSIZE * lower_bound_select_s;
 	prev_select_s = (unsigned int) select_s[lower_bound_select_s * CHARSCALE + target_char_int];
 	//if the target section in the current buffer?
 	gap_select_s = (k - 1) - current_s_buffer_section;
 	readSBySection(lower_bound_select_s);
 
 	//yes.
-	if (gap_select_s >= 0 && ((unsigned int)gap_select_s < (unsigned int)(MAXSIZE / SECTIONSIZE))) {
-		for (a = gap_select_s * (unsigned int)SECTIONSIZE; a < (k - current_s_buffer_section) * SECTIONSIZE; a++) {
+	if (gap_select_s >= 0 && ((unsigned int)gap_select_s < (unsigned int)(MAXSIZE / CHARSECTIONSIZE))) {
+		for (a = gap_select_s * (unsigned int)CHARSECTIONSIZE; a < (k - current_s_buffer_section) * CHARSECTIONSIZE; a++) {
 			if (s_buffer[a] == target_char) {
 				prev_select_s++;
 				if (prev_select_s == target_num) {
-					result_select_s = a + current_s_buffer_section * SECTIONSIZE;
+					result_select_s = a + current_s_buffer_section * CHARSECTIONSIZE;
 					return result_select_s;
 				}
 			}
@@ -193,7 +194,7 @@ unsigned int selectS(unsigned int target_num, unsigned int target_char_int) {
 	} else {
 		//no,fetch the new s_buffer.
 		readSBySection(lower_bound_select_s);
-		for (a = 0; a < SECTIONSIZE; a++) {
+		for (a = 0; a < CHARSECTIONSIZE; a++) {
 			if (s_buffer[a] == target_char) {
 				prev_select_s++;
 				if (prev_select_s == target_num) {
@@ -219,12 +220,12 @@ unsigned int rankS(unsigned int target_num, char target_char) {
 	if (target_num > count_of_s) {
 		return lens_table[target_char_int];
 	}
-	lower_bound_section_rank_s = target_num / SECTIONSIZE;
+	lower_bound_section_rank_s = target_num / CHARSECTIONSIZE;
 	prev_sum_of_char = select_s[lower_bound_section_rank_s * CHARSCALE + target_char_int];
 	readSBySection(lower_bound_section_rank_s);
 
-	for (e = (lower_bound_section_rank_s - current_s_buffer_section) * SECTIONSIZE;
-		 e <= target_num - current_s_buffer_section * SECTIONSIZE; e++) {
+	for (e = (lower_bound_section_rank_s - current_s_buffer_section) * CHARSECTIONSIZE;
+		 e <= target_num - current_s_buffer_section * CHARSECTIONSIZE; e++) {
 		if (s_buffer[e] == target_char) {
 			prev_sum_of_char++;
 		}
@@ -562,9 +563,9 @@ unsigned int occS(char c, unsigned int num) {
 unsigned int lb = 0;
 
 char getCharAtS(unsigned int target_num) {
-	lb = target_num / SECTIONSIZE;
+	lb = target_num / CHARSECTIONSIZE;
 	readSBySection(lb);
-	return s_buffer[target_num - (current_s_buffer_section) * SECTIONSIZE];
+	return s_buffer[target_num - (current_s_buffer_section) * CHARSECTIONSIZE];
 }
 
 
@@ -832,37 +833,48 @@ void readSB(string &fileName) {
 	}
 	fseek(bp,0L,SEEK_END);
 	long bFileSize=ftell(bp);
-	//cout<<bFileSize<<endl;
 	rewind(bp);
+	fseek(sp,0L,SEEK_END);
+	//long sFileSize=ftell(sp);
+	rewind(sp);
+
 	if(bFileSize<102400){
 		SECTIONSIZE=128;
+		CHARSECTIONSIZE=1024;
 		BIT_SECTION_SIZE_OF_CHAR=16;
 	}
 	else if(bFileSize>512000 && bFileSize<=1024000){
 		SECTIONSIZE*=2;
+		CHARSECTIONSIZE=4096;
 		BIT_SECTION_SIZE_OF_CHAR*=2;
 	}else if(bFileSize>1024000 && bFileSize<=2048000){
 		SECTIONSIZE*=4;
+		CHARSECTIONSIZE=10240;
 		BIT_SECTION_SIZE_OF_CHAR*=4;
 	}
 	else if(bFileSize>2048000 && bFileSize<=4096000){
 		MAXSIZE*=2;
 		SECTIONSIZE*=8;
+		CHARSECTIONSIZE=20480;
 		BIT_SECTION_SIZE_OF_CHAR*=8;
 	}
 	else if(bFileSize>4096000){
-		MAXSIZE*=4;
+		MAXSIZE*=8;
 		SECTIONSIZE*=16;
+		CHARSECTIONSIZE*=2;
+		CHARSECTIONSIZE=CHAR_SECTION_SIZE;
 		BIT_SECTION_SIZE_OF_CHAR*=16;
 	}
-
+	//cout<<select_s.capacity()<<endl;
 	// rank_s select_s
 	while (!feof(sp)) {
+		//cout<<s_section_count<<endl;
 		current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 		for (i = 0; i < current_s_buffer_size; i++) {
 			lens_table[(int) s_buffer[i]]++;
-			if ((i + 1) % SECTIONSIZE == 0) {
+			if ((i + 1) % CHARSECTIONSIZE == 0) {
 				for (j = 0; j < CHARSCALE; j++) {
+					//cout<<select_s.size()<<","<<lens_table[j]<<endl;
 					select_s.push_back(lens_table[j]);
 				}
 				s_section_count++;
@@ -870,6 +882,7 @@ void readSB(string &fileName) {
 		}
 		count_of_s += current_s_buffer_size;
 	}
+
 	//c_table
 	unsigned int prev_chars_count = 0;
 	for (i = 1; i < CHARSCALE; i++) {
@@ -908,6 +921,7 @@ void readSB(string &fileName) {
 		char_b_count += current_b_buffer_size;
 		count_of_b = b_count;
 	}
+	//cout<<"b scaned."<<endl;
 	if (!bbp) {
 		generateBB();
 	} else {
