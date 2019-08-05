@@ -734,6 +734,24 @@ void searchForR(string target) {
 	cout << mappingIndex.size() << endl;
 }
 
+void sortArray(vector<int> &arr){
+	int tmp=0,min=0;
+	for(i=0;i<arr.size();i++){
+		min=arr[i];
+		tmp=i;
+		for(j=i;j<arr.size();j++){
+			if(arr[j]<min){
+				min=arr[j];
+				tmp=j;
+			}
+		}
+		if(min<arr[i]){
+			arr[tmp]=arr[i];
+			arr[i]=min;
+		}
+	}
+}
+
 void searchForA(string target) {
 	backwardSearch(target, f_result, l_result);
 
@@ -741,7 +759,7 @@ void searchForA(string target) {
 		return;
 	}
 	findAllUniqueMatch(f_result, l_result);
-	sort(mappingIndex.begin(), mappingIndex.end());
+	sortArray(mappingIndex);
 	for (i = 0; i < mappingIndex.size(); i++) {
 		cout << "[" << mappingIndex[i] << "]" << endl;
 	}
@@ -783,7 +801,7 @@ void searchForN(string target) {
 			break;
 		}
 		target_num++;
-		if (target_num > count_of_s) {
+		if ((unsigned int)target_num > count_of_s) {
 			break;
 		}
 	}
