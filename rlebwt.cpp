@@ -673,12 +673,6 @@ void backwardSearch(string &target, int &f_result, int &l_result) {
 
 int f_result = 0, l_result = 0;
 
-void searchForTimes(string target) {
-	backwardSearch(target, f_result, l_result);
-	if (l_result - f_result + 1 > 0) {
-		cout << l_result - f_result + 1 << endl;
-	}
-}
 
 //b->bb  L->F
 unsigned int backwordDecode(unsigned int target_num) {
@@ -691,6 +685,38 @@ unsigned int backwordDecode(unsigned int target_num) {
 	return selectBBForSearch(cs_table[(int) c] + occS(c, target_num) - 1) + target_num - selectB(rank_b_val - 1) - 1;
 
 }
+
+void searchForTimes(string target) {
+	backwardSearch(target, f_result, l_result);
+
+
+	if (l_result - f_result + 1 > 0) {
+		int result=l_result - f_result + 1;
+		if(!isNum(target)){
+			cout << l_result - f_result + 1 << endl;
+		}else{
+			unsigned int current_p = 0, next_p = 0, line = 0;
+			char char_of_pointer = 0;
+			for (line = f_result; line <= l_result; line++) {
+				next_p = line;
+				while (true) {
+					current_p = next_p;
+					next_p = backwordDecode(current_p);
+					char_of_pointer = getCharAtS(rankB(current_p) - 1);
+					if (char_of_pointer == '[') {
+						result--;
+						break;
+					}
+					else if (char_of_pointer == ']' || !isdigit(char_of_pointer)) {
+						break;
+					}
+				}
+			}
+			cout<<result<<endl;
+		}
+	}
+}
+
 
 void findAllUniqueMatch(unsigned f_result, unsigned l_result) {
 	unsigned int current_p = 0, next_p = 0, line = 0, status = 0;
@@ -804,6 +830,9 @@ void printPreviousContent(unsigned int start_p) {
 }
 
 void searchForN(string target) {
+	if(!isNum(target)){
+		return;
+	}
 	int target_num = stoi(target) + 1;
 	string str = "";
 	string prev_str = "[" + target + "]";
