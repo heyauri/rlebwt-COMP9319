@@ -9,17 +9,16 @@ using namespace std;
 
 //MAXSIZE should larger than SECTIONSIZE
 
-#define MAXSIZE 40960
+#define MAX_SIZE 40960
 #define BITMAX MAXSIZE*8
 #define CHARSCALE 128
 
 //section size should >= 8
-#define SECTIONSIZE 2048
-#define BIT_SECTION_SIZE_OF_CHAR (SECTIONSIZE/8)
+#define SECTION_SIZE 1024
 
 //in char i.e. 8 bits
 //dont know why...this size can't be 102400 =_=...
-#define BB_BUFFER_SIZE 40960
+#define BB_BUFFER_SIZE 409600
 
 void printBitArray(std::vector<bool> &arr);
 void writeBitToBitArray(vector<bool> &arr, int l);

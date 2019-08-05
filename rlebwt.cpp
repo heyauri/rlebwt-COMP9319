@@ -14,6 +14,11 @@ using namespace std;
 unsigned int i, j, k, a, s, d, q, w, e, sbb;
 unsigned int outer = 0, inner = 0;
 
+
+unsigned int MAXSIZE=MAX_SIZE;
+unsigned int SECTIONSIZE=SECTION_SIZE;
+unsigned int BIT_SECTION_SIZE_OF_CHAR=SECTIONSIZE/8;
+
 //buffers
 std::string bbFN, bFN, sFN;
 char *s_buffer = new char[MAXSIZE];
@@ -526,6 +531,28 @@ void readSB(string &fileName) {
 	if (!sp || !bp) {
 		cout << fileName + ".s/.b not exists!" << endl;
 	}
+	fseek(bp,0L,SEEK_END);
+	long bFileSize=ftell(bp);
+	//cout<<bFileSize<<endl;
+	rewind(bp);
+	if(bFileSize>512000 && bFileSize<=1024000){
+		SECTIONSIZE*=2;
+		BIT_SECTION_SIZE_OF_CHAR*=2;
+	}else if(bFileSize>1024000 && bFileSize<=2048000){
+		SECTIONSIZE*=4;
+		BIT_SECTION_SIZE_OF_CHAR*=4;
+	}
+	else if(bFileSize>2048000 && bFileSize<=4096000){
+		MAXSIZE*=2;
+		SECTIONSIZE*=8;
+		BIT_SECTION_SIZE_OF_CHAR*=8;
+	}
+	else if(bFileSize>4096000){
+		MAXSIZE*=4;
+		SECTIONSIZE*=16;
+		BIT_SECTION_SIZE_OF_CHAR*=16;
+	}
+
 	// rank_s select_s
 	while (!feof(sp)) {
 		current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
@@ -558,11 +585,12 @@ void readSB(string &fileName) {
 			for (j = 0; j < 8; j++) {
 				if (b_buffer[i] & (128 >> j)) {
 					b_count++;
+					/*
 					if ((b_count) % SECTIONSIZE == 0) {
 						//cout<<char_b_count*8+8*i+j<<endl;
 						select_b.push_back((char_b_count + i) * 8 + j);
 						select_b_section_count++;
-					}
+					}*/
 					if (b_count == count_of_s + 1) {
 						suffix_b1_start = rank_b_section_count * SECTIONSIZE + (i * 8 + j) % SECTIONSIZE;
 						break;

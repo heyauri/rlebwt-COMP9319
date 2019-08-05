@@ -2,9 +2,9 @@
 
 make -B
 
-fn="./test/simple3"
+fn="./test/dblp"
 
-rm -f "$fn.bb"
+#rm -f "$fn.bb"
 
 word=ana
 
@@ -14,7 +14,7 @@ then
 fi
 
 
-time ./rlebwt -m $fn ./index "\"$word\""
+time ./rlebwt -a $fn ./index "\"$word\""
 #./rlebwt -m $fn ./index "$word"
 
 #time ./rlebwt_test -m "$fn" index "$word" >rt
@@ -22,7 +22,7 @@ time ./rlebwt -m $fn ./index "\"$word\""
 #cat "$fn.txt"
 egrep -o "$word" "$fn.txt" |wc -w
 
-#time valgrind --tool=massif --pages-as-heap=yes  ./rlebwt  -m $fn  ./index  "in"
+#time valgrind --tool=massif --pages-as-heap=yes  ./rlebwt  -m $fn  ./index  "\"$word\""
 
 
 if [[ "$fn" =~ "simple" ]]
