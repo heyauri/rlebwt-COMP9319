@@ -697,7 +697,7 @@ void searchForTimes(string target) {
 		}else{
 			unsigned int current_p = 0, next_p = 0, line = 0;
 			char char_of_pointer = 0;
-			for (line = f_result; line <= l_result; line++) {
+			for (line = (unsigned)f_result; line <=(unsigned) l_result; line++) {
 				next_p = line;
 				while (true) {
 					current_p = next_p;
