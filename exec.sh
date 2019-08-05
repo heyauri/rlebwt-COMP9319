@@ -4,7 +4,7 @@ make -B
 
 fn="./test/dblp"
 
-#rm -f "$fn.bb"
+rm -f "$fn.bb"
 
 word=ana
 
@@ -14,7 +14,7 @@ then
 fi
 
 
-time ./rlebwt -a $fn ./index "\"$word\""
+time ./rlebwt -m $fn ./index "\"$word\""
 #./rlebwt -m $fn ./index "$word"
 
 #time ./rlebwt_test -m "$fn" index "$word" >rt

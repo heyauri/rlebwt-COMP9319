@@ -1,0 +1,67 @@
+rm -f *.o *.out rlebwt
+
+make -B
+
+fn="./test/shopping"
+fn2="./test/dblp"
+
+
+echo "Total 4 sets of tests."
+echo "Test 1 starts..."
+./rlebwt -m "$fn" shoppingidx "in" > test1m.out
+./rlebwt -r "$fn" shoppingidx "in" > test1r.out
+./rlebwt -a "$fn" shoppingidx "in" > test1a.out
+./rlebwt -n "$fn" shoppingidx "75" > test1n.out
+
+echo "Test 2 starts..."
+./rlebwt -m "$fn" shoppingidx "in " > test2m.out
+./rlebwt -r "$fn" shoppingidx "in " > test2r.out
+./rlebwt -a "$fn" shoppingidx "in " > test2a.out
+./rlebwt -n "$fn" shoppingidx "81" > test2n.out
+
+echo "Test 3 starts..."
+./rlebwt -m "$fn2" dblpidx "ata" > test3m.out
+./rlebwt -r "$fn2" dblpidx "ata" > test3r.out
+./rlebwt -a "$fn2" dblpidx "ata" > test3a.out
+./rlebwt -n "$fn2" dblpidx "785846" > test3n.out
+
+echo "Test 4 starts..."
+./rlebwt -a "$fn2" dblpidx2 " Data " > test4a.out
+./rlebwt -m "$fn2" dblpidx2 " Data " > test4m.out
+./rlebwt -r "$fn2" dblpidx2 " Data " > test4r.out
+./rlebwt -n "$fn2" dblpidx2 "3929" > test4n.out
+
+for ((i=1;i<5;++i))
+do
+  correct=`eval diff -q ./files/test${i}m.out test${i}m.out`
+  echo -ne "test${i} -m: "
+  if [ -z "$correct" ]; then
+    echo  "Passed" 
+  else
+    echo  "Failed" 
+  fi
+  correct=`eval diff -q ./files/test${i}r.out test${i}r.out`
+  echo -ne "test${i} -r: "
+  if [ -z "$correct" ]; then
+    echo  "Passed"
+  else
+    echo  "Failed"
+  fi
+  correct=`eval diff -q ./files/test${i}a.out test${i}a.out`
+  echo -ne "test${i} -a: "
+  if [ -z "$correct" ]; then
+    echo  "Passed"
+  else
+    echo  "Failed"
+  fi
+  correct=`eval diff -q ./files/test${i}n.out test${i}n.out`
+  echo -ne "test${i} -n: "
+  if [ -z "$correct" ]; then
+    echo  "Passed"
+  else
+    echo  "Failed"
+  fi
+
+done
+echo "DONE" 
+

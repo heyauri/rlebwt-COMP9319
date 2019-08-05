@@ -31,7 +31,7 @@ index
 CMakeLists.txt
 rlebwt
 rlfm.cpp
-files
+files/large.*
 test/large.*
 rlebwt_for_test.cpp
 rlebwt_test
@@ -42,4 +42,5 @@ r1
 r2
 r3
 rlebwt.dSYM
+test*.out
 
