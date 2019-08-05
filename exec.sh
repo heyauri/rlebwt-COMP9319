@@ -14,7 +14,7 @@ then
 fi
 
 
-time ./rlebwt -a $fn ./index "\"$word\""
+time ./rlebwt -n $fn ./index "\"$word\""
 #./rlebwt -m $fn ./index "$word"
 
 #time ./rlebwt_test -m "$fn" index "$word" >rt

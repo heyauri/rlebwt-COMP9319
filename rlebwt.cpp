@@ -793,6 +793,11 @@ void printPreviousContent(unsigned int start_p) {
 void searchForN(string target) {
 	int target_num = stoi(target) + 1;
 	string str = "";
+	string prev_str = "[" + target + "]";
+	backwardSearch(prev_str, f_result, l_result);
+	if (l_result - f_result + 1 <= 0) {
+		return;
+	}
 	while (true) {
 		str = "[" + to_string(target_num) + "]";
 		//cout<<str<<endl;
