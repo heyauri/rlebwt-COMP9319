@@ -22,10 +22,11 @@ unsigned int BIT_SECTION_SIZE_OF_CHAR=SECTIONSIZE/8;
 
 //buffers
 std::string bbFN, bFN, sFN;
-char *s_buffer = new char[MAXSIZE];
-char *b_buffer = new char[MAXSIZE];
-char *bb_buffer = new char[MAXSIZE];
-char *bb_buffer_for_generate = new char[BB_BUFFER_SIZE];
+
+char *s_buffer;
+char *b_buffer;
+char *bb_buffer;
+char *bb_buffer_for_generate;
 
 //for s
 unsigned int cs_table[CHARSCALE], lens_table[CHARSCALE];
@@ -494,7 +495,6 @@ void generateBB() {
 	fwrite(bb_buffer_for_generate, 1, current_bb_buffer_size, bbp);
 	rewind(bbp);
 	delete[]bb_buffer_for_generate;
-	bb_buffer_for_generate = new char[MAXSIZE];
 	current_bb_buffer_size = (unsigned int) fread(bb_buffer, 1, MAXSIZE, bbp);
 	current_bb_buffer_section = 0;
 
@@ -865,6 +865,11 @@ void readSB(string &fileName) {
 		CHARSECTIONSIZE=CHAR_SECTION_SIZE;
 		BIT_SECTION_SIZE_OF_CHAR*=16;
 	}
+
+
+	s_buffer = new char[MAXSIZE];
+	b_buffer = new char[MAXSIZE];
+	bb_buffer = new char[MAXSIZE];
 	//cout<<select_s.capacity()<<endl;
 	// rank_s select_s
 	while (!feof(sp)) {
@@ -923,6 +928,7 @@ void readSB(string &fileName) {
 	}
 	//cout<<"b scaned."<<endl;
 	if (!bbp) {
+		bb_buffer_for_generate = new char[BB_BUFFER_SIZE];
 		generateBB();
 	} else {
 		constructBBIndex();
