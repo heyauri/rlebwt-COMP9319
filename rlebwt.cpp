@@ -399,7 +399,8 @@ void generateBB() {
 	initBB();
 	rewind(sp);
 	rewind(bp);
-	rewind(bbp);
+	fclose(bbp);
+	bbp = fopen(bbFN.c_str(), "w+");
 	bb_buffer_for_generate = new char[BB_BUFFER_SIZE];
 	current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
@@ -460,7 +461,7 @@ void generateBB() {
 void constructBBIndex() {
 	//cout<<"construct index"<<endl;
 	fclose(bbp);
-	bbp = fopen(bbFN.c_str(), "r+");
+	bbp = fopen(bbFN.c_str(), "r");
 	rewind(bbp);
 	unsigned int bb_count = 0;
 	unsigned int prev_bb_char_count = 0;
@@ -508,7 +509,7 @@ void readSB(string &fileName) {
 	bFN = fileName + ".b";
 	sp = fopen(sFN.c_str(), "r");
 	bp = fopen(bFN.c_str(), "r");
-	bbp = fopen(bbFN.c_str(), "r+");
+	bbp = fopen(bbFN.c_str(), "r");
 	if (!sp || !bp) {
 		cout << fileName + ".s/.b not exists!" << endl;
 	}

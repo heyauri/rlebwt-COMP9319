@@ -2,7 +2,7 @@
 
 make -B
 
-fn="./test/large"
+fn="./test/dblp"
 
 #rm -f "$fn.bb"
 
@@ -17,7 +17,7 @@ fi
 time ./rlebwt -a $fn ./index "\"$word\""
 #./rlebwt -m $fn ./index "$word"
 
-time ./rlebwt_test -m "$fn" index "$word" >rt
+#time ./rlebwt_test -m "$fn" index "$word" >rt
 
 #cat "$fn.txt"
 egrep -o "$word" "$fn.txt" |wc -w
