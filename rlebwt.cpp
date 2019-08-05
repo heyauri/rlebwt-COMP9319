@@ -19,7 +19,7 @@ std::string bbFN, bFN, sFN;
 char *s_buffer = new char[MAXSIZE];
 char *b_buffer = new char[MAXSIZE];
 char *bb_buffer = new char[MAXSIZE];
-char *bb_buffer_for_generate = NULL;
+char *bb_buffer_for_generate = new char[BB_BUFFER_SIZE];
 
 //for s
 unsigned int cs_table[CHARSCALE], lens_table[CHARSCALE];
@@ -78,13 +78,22 @@ void printLengthTableOfS() {
 
 void initBB() {
 	bbp = fopen(bbFN.c_str(), "w+");
+	//cout<<bbFN<<endl;
+	//cout<<rank_b_section_count<<endl;
+	//cout<<char_b_count<<endl;
+	if(!bbp){
+		cout<<"no bb"<<endl;
+	}
 	for (i = 0; i < rank_b_section_count; i++) {
+		//cout<<i<<endl;
+
 		char tmp[SECTIONSIZE / 8];
 		for (j = 0; j < SECTIONSIZE; j += 8) {
 			tmp[j / 8] = -1;
 		}
 		fwrite(tmp, SECTIONSIZE / 8, 1, bbp);
 	}
+
 	if (char_b_count > (SECTIONSIZE * rank_b_section_count / 8)) {
 		unsigned int left_count = (unsigned int) char_b_count % (SECTIONSIZE / 8);
 		char tmp[left_count];
@@ -274,7 +283,6 @@ void writeZerosIntoBB(unsigned int &baseline_bb, unsigned int zeros) {
 		//current location not in buffer: write the current content to file,
 		//and then read the next section.
 		if ((baseline_bb / 8) >= current_bb_buffer_size + BB_BUFFER_SIZE * current_bb_buffer_section) {
-			//cout << "reading" <<current_bb_buffer_section<< endl;
 			fseek(bbp, -BB_BUFFER_SIZE, 1);
 			fwrite(bb_buffer_for_generate, 1, current_bb_buffer_size, bbp);
 			current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
@@ -399,13 +407,18 @@ void generateBB() {
 	initBB();
 	rewind(sp);
 	rewind(bp);
-	fclose(bbp);
-	bbp = fopen(bbFN.c_str(), "w+");
+	if(bbp){
+		fclose(bbp);
+	}
+	bbp = fopen(bbFN.c_str(), "r+");
 	bb_buffer_for_generate = new char[BB_BUFFER_SIZE];
 	current_s_buffer_size = (unsigned int) fread(s_buffer, 1, MAXSIZE, sp);
 	current_b_buffer_size = (unsigned int) fread(b_buffer, 1, MAXSIZE, bp);
 	current_bb_buffer_size = (unsigned int) fread(bb_buffer_for_generate, 1, BB_BUFFER_SIZE, bbp);
 	current_bb_buffer_section = 0;
+	//cout<<current_s_buffer_size<<endl;
+	//cout<<current_b_buffer_size<<endl;
+	//cout<<current_bb_buffer_size<<endl;
 	//cout<<"generate the bb file."<<endl;
 	unsigned int zeros = 0;
 	unsigned int total_zeros = 0;
@@ -422,7 +435,6 @@ void generateBB() {
 		j = 0;
 		while (j < lens_table[i]) {
 
-			//cout<<(char)i<<","<<j<<":"<<selectS(j, i)<<":"<<selectB(selectS(j, i))<<endl;
 
 			zeros = getZeros(selectB(selectS(j, i)));
 			baseline_bb++;
@@ -489,10 +501,11 @@ void constructBBIndex() {
 	}
 
 	//cout<<bb_count<<endl;
-
+	/*
 	for (i = 0; i <= count_of_s; i++) {
 		//cout<<i+1<<", "<<select_bb[(i+1)/SECTIONSIZE]<<", "<<selectBB(i)+1<<endl;
 	}
+	 */
 
 
 }

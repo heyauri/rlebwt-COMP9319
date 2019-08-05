@@ -4,7 +4,7 @@ make -B
 
 fn="./test/dblp"
 
-#rm -f "$fn.bb"
+rm -f "$fn.bb"
 
 word=ana
 
