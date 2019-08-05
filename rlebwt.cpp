@@ -164,8 +164,8 @@ unsigned int selectS(unsigned int target_num, unsigned int target_char_int) {
 	readSBySection(lower_bound_select_s);
 
 	//yes.
-	if (gap_select_s >= 0 && (gap_select_s < (MAXSIZE / SECTIONSIZE))) {
-		for (a = gap_select_s * SECTIONSIZE; a < (k - current_s_buffer_section) * SECTIONSIZE; a++) {
+	if (gap_select_s >= 0 && ((unsigned int)gap_select_s < (unsigned int)(MAXSIZE / SECTIONSIZE))) {
+		for (a = gap_select_s * (unsigned int)SECTIONSIZE; a < (k - current_s_buffer_section) * SECTIONSIZE; a++) {
 			if (s_buffer[a] == target_char) {
 				prev_select_s++;
 				if (prev_select_s == target_num) {
@@ -318,8 +318,8 @@ unsigned int selectB(unsigned int target_num) {
 	prev_select_b = rank_b[lower_bound_select_b];
 	gap_select_b = lower_bound_select_b - current_b_buffer_section;
 	//in buffer
-	if (gap_select_b >= 0 && (gap_select_b < (8 * MAXSIZE / SECTIONSIZE))) {
-		for (outer = gap_select_b * BIT_SECTION_SIZE_OF_CHAR;
+	if (gap_select_b >= 0 && ((unsigned int)gap_select_b < (8 * MAXSIZE / SECTIONSIZE))) {
+		for (outer = (unsigned int)gap_select_b * BIT_SECTION_SIZE_OF_CHAR;
 			 outer <= (w - current_b_buffer_section) * BIT_SECTION_SIZE_OF_CHAR; outer++) {
 			//every char
 			for (inner = 0; inner < 8; inner++) {
