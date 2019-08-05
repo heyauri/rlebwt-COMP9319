@@ -1,6 +1,6 @@
-CXXFLAGS = -std=c++14 -pthread -Wall -Wno-dangling-else -O3
+CXXFLAGS =  -Wall -Werror -g -lm
 
-CXX := /usr/bin/clang++
+CXX :=  g++
 
 #all: rlebwt rlebwt_test
 all: rlebwt
